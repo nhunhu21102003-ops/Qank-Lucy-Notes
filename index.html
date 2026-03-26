@@ -29,7 +29,7 @@
         @keyframes float {
             0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
             20% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+            100% { transform: translateY(-10vh)translateX(20px) rotate(360deg); opacity: 0; }
         }
 
         /* Canvas & Viewport */
@@ -63,8 +63,17 @@
         /* Note Themes */
         .note-mint { background-color: #f0fdf4; border-color: #86efac; }
         .note-pink { background-color: #fff1f2; border-color: #f9a8d4; }
+        .note-blue { background-color: #eff6ff; border-color: #93c5fd; }
+        .note-yellow { background-color: #fefce8; border-color: #fde047; }
+        .note-gold { background-color: #fffbeb; border-color: #fbbf24; }
+        .note-lavender { background-color: #f5f3ff; border-color: #c4b5fd; }
+        .note-sky { background-color: #f0f9ff; border-color: #7dd3fc; }
+        .note-earth { background-color: #fafaf9; border-color: #d6d3d1; }
         .note-charcoal { background-color: #1f2937; border-color: #4b5563; color: white; }
-        .note-charcoal h3 { color: #f9fafb; }
+        .note-charcoal h3 { color: #f3f4f6; border-color: rgba(255,255,255,0.1); }
+        .note-charcoal p { color: #d1d5db; }
+        .note-coral { background-color: #fff5f2; border-color: #fda4af; }
+
 
         /* UI Elements */
         .sidebar { 
@@ -115,7 +124,7 @@
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
             <h1 class="text-3xl font-black text-gray-800 mb-2">Qank&Lucy Notes</h1>
-            <p class="text-gray-400 mb-10 italic">Nơi lưu giữ những ý tưởng tuyệt vời nhất</p>
+            <p class="text-gray-400 mb-10 italic">You may be out of my sight, but you're all I see</p>
             
             <div class="space-y-4">
                 <input type="text" id="guest-name-input" placeholder="Nhập tên của bạn..." class="w-full p-5 bg-gray-50 rounded-2xl outline-none text-center font-bold border-2 border-transparent focus:border-emerald-200 transition-all mb-2">
@@ -172,7 +181,7 @@
             <!-- Controls -->
             <div class="space-y-4">
                 <button onclick="openNoteModal()" class="w-full bg-emerald-600 text-white py-6 rounded-[2.2rem] font-black text-lg shadow-2xl hover:translate-y-[-3px] hover:bg-emerald-700 transition-all active:translate-y-0 btn-action">
-                    + Ghi Chú Mới
+                    + Tạo Ghi Chú Mới
                 </button>
                 <button onclick="resetView()" class="w-full py-4 text-gray-400 font-bold text-sm hover:text-emerald-600 transition-colors btn-action">Căn giữa không gian</button>
             </div>
@@ -211,12 +220,16 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-gray-400 block mb-4 uppercase tracking-widest">Kiểu chữ</label>
-                        <select id="note-font-input" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold outline-none border-2 border-transparent focus:border-emerald-200 transition-all">
-                            <option value="inherit">Mặc định (Quicksand)</option>
-                            <option value="'Dancing Script', cursive">Viết tay nghệ thuật</option>
-                            <option value="'Space Mono', monospace">Mã hóa (Mono)</option>
-                            <option value="'Pacifico', cursive">Phóng khoáng</option>
-                            <option value="'Playfair Display', serif">Cổ điển (Serif)</option>
+                        <select onchange="changeGlobalFont(this.value)" class="w-full p-3 bg-gray-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-100">
+                          <option value="Quicksand">Quicksand (Tròn trịa)</option>
+                          <option value="Montserrat">Montserrat (Mạnh mẽ)</option>
+                          <option value="Dancing Script">Dancing Script (Viết tay)</option>
+                          <option value="Pacifico">Pacifico (Phóng khoáng)</option>
+                          <option value="Playfair Display">Playfair (Sang trọng)</option>
+                          <option value="Lora">Lora (Tinh tế)</option>
+                          <option value="Oswald">Oswald (Cô đọng)</option>
+                          <option value="Space Mono">Space Mono (Mã code)</option>
+
                         </select>
                     </div>
                 </div>
