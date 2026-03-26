@@ -388,10 +388,16 @@
 
         function getSpotifyEmbed(url) {
             if (!url) return null;
-            const match = url.match(/spotify(?:\.com\/|\:)(track|album|playlist|artist)(?:\/|\:)([a-zA-Z0-9]+)/);
-            // Sửa link embed chuẩn của Spotify
-            return match ? `https://open.spotify.com/embed/${match[1]}/${match[2]}` : null;
-        }
+    // Tìm mã ID của bài hát/playlist từ link người dùng dán vào
+    const match = url.match(/spotify(?:\.com\/|\:)(track|album|playlist|artist)(?:\/|\:)([a-zA-Z0-9]+)/);
+    
+    if (match) {
+        // Trả về Link Nhúng chuẩn để cho vào iframe
+        // match[1] là loại (track/album), match[2] là ID
+        return `https://open.spotify.com/embed/${match[1]}/${match[2]}`;
+    }
+    return null;
+}
 
         window.saveNote = async () => {
             if (!currentUser) {
