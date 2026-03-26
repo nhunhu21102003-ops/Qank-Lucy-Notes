@@ -122,13 +122,12 @@
     <div id="stars-layer" class="bg-layer" style="background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);"></div>
     <div id="football-layer" class="bg-layer football-bg"></div>
 
-    <!-- Login -->
     <div id="auth-overlay">
         <div class="bg-white p-10 rounded-[3.5rem] shadow-2xl max-w-md w-full text-center">
             <div class="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C10 14.52 12 13 13 12"/></svg>
             </div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">MintyNotes</h1>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Qank&Lucy Notes</h1>
             <p class="text-gray-500 mb-8 text-sm italic">Cá nhân hóa từng suy nghĩ</p>
             <input type="email" id="email-input" placeholder="Tên của bạn..." class="w-full p-4 bg-gray-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-emerald-200 transition-all text-center">
             <button onclick="login()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-xl shadow-emerald-200 transition-all transform active:scale-95">
@@ -137,12 +136,10 @@
         </div>
     </div>
 
-    <!-- Toggle Sidebar -->
     <div id="toggle-sidebar" class="hidden" onclick="toggleSidebar()">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </div>
 
-    <!-- Sidebar Control -->
     <aside class="sidebar collapsed" id="app-sidebar">
         <div class="flex items-center justify-between mb-8 pb-4 border-b">
             <div class="flex items-center gap-3">
@@ -158,7 +155,6 @@
         </div>
 
         <div class="space-y-8">
-            <!-- Themes -->
             <div>
                 <label class="text-[11px] font-bold text-gray-400 block mb-4 uppercase tracking-wider">Hình nền Canvas</label>
                 <div class="grid grid-cols-4 gap-3">
@@ -169,7 +165,6 @@
                 </div>
             </div>
 
-            <!-- Global Font -->
             <div>
                 <label class="text-[11px] font-bold text-gray-400 block mb-4 uppercase tracking-wider">Phông chữ mặc định</label>
                 <select onchange="changeGlobalFont(this.value)" class="w-full p-3 bg-gray-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-100">
@@ -184,7 +179,6 @@
                 </select>
             </div>
 
-            <!-- Zoom -->
             <div>
                 <label class="text-[11px] font-bold text-gray-400 block mb-4 uppercase tracking-wider">Thu phóng: <span id="zoom-val" class="text-emerald-600">100%</span></label>
                 <div class="flex items-center gap-4 bg-gray-50 p-2 rounded-2xl">
@@ -200,18 +194,15 @@
         </div>
     </aside>
 
-    <!-- Canvas -->
     <div id="canvas-viewport">
         <div id="canvas-content"></div>
     </div>
 
-    <!-- Edit Modal -->
     <div id="note-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md z-[3000] hidden flex items-center justify-center p-6">
         <div class="bg-white rounded-[3rem] w-full max-w-xl p-10 shadow-2xl border border-white/20">
             <h2 id="modal-title" class="text-2xl font-extrabold mb-8 text-gray-800">Cài đặt Ghi chú</h2>
             
             <div class="space-y-6">
-                <!-- Color & Font Picker in Modal -->
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="text-[10px] font-bold text-gray-400 block mb-3 uppercase tracking-widest">Màu sắc</label>
