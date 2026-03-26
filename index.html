@@ -26,7 +26,8 @@
 
         /* Background Layers */
         .bg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
-        .heart, .fish, .ball { position: absolute; animation: float 10s infinite linear; }
+        .heart { position: absolute; color: #f472b6; opacity: 0.3; animation: float 10s infinite linear; }
+        .fish { position: absolute; color: #f472b6; opacity: 0.3; animation: float 10s infinite linear; }
         .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle 3s infinite ease-in-out; }
         .football-bg { background: linear-gradient(to bottom, #74c476, #238b45); }
 
@@ -50,9 +51,9 @@
             position: absolute; min-width: 260px; background: rgba(255, 255, 255, 0.9);
             padding: 1.2rem; border-radius: 1.5rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
-            display: flex; flex-direction: column; 
+            display: flex; flex-direction: column; resize: both;
             overflow: hidden; border: 2px solid transparent;
-            backdrop-filter: blur(10px); transition: box-shadow 0.3s;
+            backdrop-filter: blur(10px); transition: box-shadow 0.3s, transform 0.2s;
         }
         
         .note-header {
@@ -63,13 +64,21 @@
 
         .edit-hint { position: absolute; bottom: 8px; right: 12px; font-size: 9px; opacity: 0; transition: opacity 0.3s; }
         .note-card:hover .edit-hint { opacity: 0.5; }
+        .note-card:hover { transform: translateY(-2px); box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.12); }
 
         /* Color Themes for Notes */
         .note-mint { background-color: #f0fdf4; border-color: #86efac; }
         .note-pink { background-color: #fff1f2; border-color: #f9a8d4; }
         .note-blue { background-color: #eff6ff; border-color: #93c5fd; }
         .note-yellow { background-color: #fefce8; border-color: #fde047; }
+        .note-gold { background-color: #fffbeb; border-color: #fbbf24; }
+        .note-lavender { background-color: #f5f3ff; border-color: #c4b5fd; }
+        .note-sky { background-color: #f0f9ff; border-color: #7dd3fc; }
+        .note-earth { background-color: #fafaf9; border-color: #d6d3d1; }
         .note-charcoal { background-color: #1f2937; border-color: #4b5563; color: white; }
+        .note-charcoal h3 { color: #f3f4f6; border-color: rgba(255,255,255,0.1); }
+        .note-charcoal p { color: #d1d5db; }
+        .note-coral { background-color: #fff5f2; border-color: #fda4af; }
 
         /* Sidebar & Modals */
         .sidebar {
@@ -89,12 +98,23 @@
             background: white; border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1); cursor: pointer;
+            transition: all 0.3s;
         }
 
         #auth-overlay {
             position: fixed; inset: 0; z-index: 2000;
             background: linear-gradient(135deg, #f0fff4 0%, #d1fae5 100%);
             display: flex; align-items: center; justify-content: center;
+        }
+        /* Select styling for note font */
+        .font-select {
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #4a5568;
+            outline: none;
         }
     </style>
 </head>
@@ -107,7 +127,7 @@
 
     <div id="auth-overlay">
         <div class="bg-white p-10 rounded-[3.5rem] shadow-2xl max-w-md w-full text-center">
-            <h1 class="text-3xl font-bold text-gray-800 mb-6">Chào mừng quay lại!</h1>
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">Welcome to Qank&Lucy Notes!</h1>
             <div class="space-y-4">
                 <button onclick="login('google')" class="w-full flex items-center justify-center gap-3 p-4 border-2 border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-bold">
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6"> Google
@@ -116,7 +136,7 @@
                     <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" class="w-6 invert"> Facebook
                 </button>
                 <div class="py-2 text-gray-400 text-sm">Hoặc đăng nhập nhanh</div>
-                <input type="text" id="guest-name" placeholder="Tên khách hàng..." class="w-full p-4 bg-gray-50 rounded-2xl outline-none border-2 border-transparent focus:border-emerald-200 transition-all text-center">
+                <input type="text" id="guest-name" placeholder="Tên người tham gia..." class="w-full p-4 bg-gray-50 rounded-2xl outline-none border-2 border-transparent focus:border-emerald-200 transition-all text-center">
                 <button onclick="login('guest')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 active:scale-95 transition-all">Vào Không Gian Ghi Chú</button>
             </div>
         </div>
@@ -138,7 +158,7 @@
             <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-8">
             <button onclick="shareLink()" class="w-full flex items-center justify-center gap-2 p-3 bg-indigo-50 text-indigo-600 rounded-2xl font-bold border-2 border-indigo-100 hover:bg-indigo-100 transition-all">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg> Chia sẻ Link cộng tác
             </button>
@@ -152,8 +172,32 @@
                     <button onclick="changeTheme('messi')" class="aspect-square rounded-2xl bg-green-500 border-2 border-white shadow-sm hover:scale-110">⚽</button>
                 </div>
             </div>
+            <div>
+                <label class="text-[11px] font-bold text-gray-400 block mb-4 uppercase tracking-wider">Phông chữ mặc định</label>
+                <select onchange="changeGlobalFont(this.value)" class="w-full p-3 bg-gray-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-100">
+                    <option value="Quicksand">Quicksand (Tròn trịa)</option>
+                    <option value="Montserrat">Montserrat (Mạnh mẽ)</option>
+                    <option value="Dancing Script">Dancing Script (Viết tay)</option>
+                    <option value="Pacifico">Pacifico (Phóng khoáng)</option>
+                    <option value="Playfair Display">Playfair (Sang trọng)</option>
+                    <option value="Lora">Lora (Tinh tế)</option>
+                    <option value="Oswald">Oswald (Cô đọng)</option>
+                    <option value="Space Mono">Space Mono (Mã code)</option>
+                </select>
+            </div>
 
-            <button onclick="openNoteModal()" class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-bold shadow-2xl hover:translate-y-[-2px] active:scale-95 transition-all">+ Tạo Ghi Chú Mới</button>
+            <div>
+                <label class="text-[11px] font-bold text-gray-400 block mb-4 uppercase tracking-wider">Thu phóng: <span id="zoom-val" class="text-emerald-600">100%</span></label>
+                <div class="flex items-center gap-4 bg-gray-50 p-2 rounded-2xl">
+                    <button onclick="zoom(-0.1)" class="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-emerald-50">-</button>
+                    <input type="range" min="0.2" max="2" step="0.1" value="1" id="zoom-slider" class="flex-grow accent-emerald-500" oninput="setZoom(this.value)">
+                    <button onclick="zoom(0.1)" class="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm hover:bg-emerald-50">+</button>
+                </div>
+            </div>
+
+            <button onclick="openNoteModal()" class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-bold shadow-2xl shadow-emerald-200 hover:translate-y-[-2px] active:scale-95 transition-all">
+                + Tạo Ghi Chú Mới
+            </button>            
             <button onclick="logout()" class="w-full text-red-400 text-xs font-bold pt-4">Đăng xuất</button>
         </div>
     </aside>
@@ -162,15 +206,54 @@
         <div id="canvas-content"></div>
     </div>
 
-    <div id="note-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md z-[3000] hidden flex items-center justify-center p-6">
-        <div class="bg-white rounded-[3rem] w-full max-w-xl p-10 shadow-2xl">
-            <h2 class="text-2xl font-extrabold mb-8 text-gray-800">Cài đặt Ghi chú</h2>
+<div id="note-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md z-[3000] hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-[3rem] w-full max-w-xl p-10 shadow-2xl border border-white/20">
+            <h2 id="modal-title" class="text-2xl font-extrabold mb-8 text-gray-800">Cài đặt Ghi chú</h2>
+            
             <div class="space-y-6">
-                <input type="text" id="note-title-input" class="w-full p-4 bg-gray-50 rounded-2xl outline-none font-bold" placeholder="Tiêu đề...">
-                <textarea id="note-input" class="w-full p-5 bg-gray-50 rounded-[2rem] outline-none min-h-[150px]" placeholder="Nội dung..."></textarea>
-                <div class="flex gap-4">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-3 uppercase tracking-widest">Màu sắc</label>
+                        <div class="flex flex-wrap gap-2" id="color-picker">
+                            <button onclick="pickColor('mint')" class="w-7 h-7 rounded-full bg-emerald-200 border-2" id="btn-mint"></button>
+                            <button onclick="pickColor('pink')" class="w-7 h-7 rounded-full bg-pink-200 border-2" id="btn-pink"></button>
+                            <button onclick="pickColor('blue')" class="w-7 h-7 rounded-full bg-blue-200 border-2" id="btn-blue"></button>
+                            <button onclick="pickColor('yellow')" class="w-7 h-7 rounded-full bg-yellow-200 border-2" id="btn-yellow"></button>
+                            <button onclick="pickColor('lavender')" class="w-7 h-7 rounded-full bg-purple-200 border-2" id="btn-lavender"></button>
+                            <button onclick="pickColor('sky')" class="w-7 h-7 rounded-full bg-sky-200 border-2" id="btn-sky"></button>
+                            <button onclick="pickColor('coral')" class="w-7 h-7 rounded-full bg-rose-200 border-2" id="btn-coral"></button>
+                            <button onclick="pickColor('charcoal')" class="w-7 h-7 rounded-full bg-gray-800 border-2" id="btn-charcoal"></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-3 uppercase tracking-widest">Phông chữ riêng</label>
+                        <select id="note-font-input" class="w-full p-2 bg-gray-50 rounded-xl text-sm border-none outline-none focus:ring-2 focus:ring-emerald-100">
+                            <option value="inherit">Mặc định (Toàn cục)</option>
+                            <option value="Quicksand">Quicksand</option>
+                            <option value="Montserrat">Montserrat</option>
+                            <option value="Dancing Script">Dancing Script</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Playfair Display">Playfair</option>
+                            <option value="Lora">Lora</option>
+                            <option value="Oswald">Oswald</option>
+                            <option value="Space Mono">Space Mono</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <input type="text" id="note-title-input" class="w-full p-4 bg-gray-50 rounded-2xl outline-none font-bold text-xl text-gray-800" placeholder="Tiêu đề...">
+                    <textarea id="note-input" class="w-full p-5 bg-gray-50 rounded-[2rem] outline-none text-base min-h-[150px]" placeholder="Nội dung ghi chú..."></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="media-link" class="w-full p-4 bg-gray-50 rounded-2xl outline-none text-xs" placeholder="Link Ảnh (URL)">
+                    <input type="text" id="spotify-link" class="w-full p-4 bg-gray-50 rounded-2xl outline-none text-xs" placeholder="Link Spotify">
+                </div>
+
+                <div class="flex gap-4 pt-4">
                     <button onclick="closeNoteModal()" class="flex-1 py-4 font-bold text-gray-400">Hủy</button>
-                    <button onclick="saveNote()" class="flex-[2] bg-gray-900 text-white py-4 rounded-[1.5rem] font-bold">Lưu & Đồng bộ</button>
+                    <button id="save-note-btn" onclick="saveNote()" class="flex-[2] bg-gray-900 text-white py-4 rounded-[1.5rem] font-bold shadow-xl">Lưu Thay Đổi</button>
                 </div>
             </div>
         </div>
@@ -183,14 +266,13 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyDlxbLJyfCHZuzd0DVSQAy65J-CIFg0uCM",
-  authDomain: "qanklucynotes.firebaseapp.com",
-  projectId: "qanklucynotes",
-  storageBucket: "qanklucynotes.firebasestorage.app",
-  messagingSenderId: "859079172160",
-  appId: "1:859079172160:web:89f2cccab108324eddbfa5",
-  measurementId: "G-05NGVEYVB5"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_DOMAIN.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
