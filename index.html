@@ -389,42 +389,57 @@
         function getSpotifyEmbed(url) {
             if (!url) return null;
             const match = url.match(/spotify(?:\.com\/|\:)(track|album|playlist|artist)(?:\/|\:)([a-zA-Z0-9]+)/);
+            // Sửa link embed chuẩn của Spotify
             return match ? `https://open.spotify.com/embed/${match[1]}/${match[2]}` : null;
         }
 
         window.saveNote = async () => {
-            if (!currentUser) return;
+            if (!currentUser) {
+            alert("Vui lòng đăng nhập trước!");
+            return;
+        }
+    
             const title = document.getElementById('note-title-input').value;
             const text = document.getElementById('note-input').value;
             const imageUrl = document.getElementById('image-url-input').value.trim();
             const spotifyRaw = document.getElementById('spotify-url-input').value.trim();
-            
+    
+            // Nếu không có nội dung gì thì không lưu
             if (!title && !text && !imageUrl && !spotifyRaw) return;
 
             const noteData = {
-                title, text, color: activeColor, font: activeFont,
-                imageUrl, 
-                spotifyRaw,
+                title: title || "",
+                text: text || "",
+                color: activeColor,
+                font: activeFont,
+                imageUrl: imageUrl || "",
+                spotifyRaw: spotifyRaw || "",
                 spotifyEmbed: getSpotifyEmbed(spotifyRaw),
-                author: document.getElementById('user-display').innerText
+                author: currentUser.displayName || document.getElementById('user-display').innerText || "Ẩn danh",
+                updatedAt: Date.now() // Nên thêm thời gian cập nhật
             };
 
-            try {
-                if (editingNoteId) {
-                    await updateDoc(doc(db, 'notes', editingNoteId), noteData);
-                } else {
-                    const id = Date.now().toString();
-                    Object.assign(noteData, {
-                        x: (window.innerWidth / 2 - posX) / scale,
-                        y: (window.innerHeight / 2 - posY) / scale,
-                        width: 300,
-                        height: 250
-                    });
-                    await setDoc(doc(db, 'notes', id), noteData);
-                }
-                window.closeNoteModal();
-            } catch (err) { console.error(err); }
-        };
+    try {
+        if (editingNoteId) {
+            await updateDoc(doc(db, 'notes', editingNoteId), noteData);
+        } else {
+            const id = Date.now().toString();
+            // Thiết lập vị trí ban đầu cho ghi chú mới
+            const newData = {
+                ...noteData,
+                x: (window.innerWidth / 2 - posX) / scale - 150,
+                y: (window.innerHeight / 2 - posY) / scale - 125,
+                width: 300,
+                height: 250
+            };
+            await setDoc(doc(db, 'notes', id), newData);
+        }
+        window.closeNoteModal();
+    } catch (err) { 
+        console.error("Lỗi khi lưu:", err);
+        alert("Không thể lưu ghi chú. Kiểm tra lại kết nối hoặc phân quyền Firebase!");
+    }
+};
 
         function setupSync() {
             const notesCol = collection(db, 'notes');
