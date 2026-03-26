@@ -332,7 +332,52 @@
                 settings: { scale, posX, posY }
             }, { merge: true });
         }
+    <script>
+        // Phông chữ và màu sắc mở rộng
+        const FONTS = ['Quicksand', 'Montserrat', 'Dancing Script', 'Pacifico', 'Playfair Display', 'Lora', 'Oswald', 'Space Mono'];
+        
+        let scale = 1;
+        let posX = window.innerWidth / 3;
+        let posY = window.innerHeight / 3;
+        let isPanning = false;
+        let startX, startY;
+        let activeColor = 'mint';
+        let currentEditingNote = null;
+        
+        const viewport = document.getElementById('canvas-viewport');
+        const content = document.getElementById('canvas-content');
+        const zoomVal = document.getElementById('zoom-val');
+        const zoomSlider = document.getElementById('zoom-slider');
 
+        function login() {
+            const email = document.getElementById('email-input').value || "Guest";
+            document.getElementById('auth-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('auth-overlay').style.visibility = 'hidden';
+                document.getElementById('app-sidebar').classList.remove('collapsed');
+                document.getElementById('toggle-sidebar').classList.remove('hidden');
+                document.getElementById('user-display').innerText = email;
+                document.getElementById('user-initial').innerText = email[0].toUpperCase();
+                updateTransform();
+            }, 500);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('app-sidebar');
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            sidebar.classList.toggle('collapsed');
+            toggleBtn.style.opacity = sidebar.classList.contains('collapsed') ? '1' : '0';
+            toggleBtn.style.pointerEvents = sidebar.classList.contains('collapsed') ? 'auto' : 'none';
+        }
+
+        // Zoom & Pan
+        viewport.addEventListener('mousedown', (e) => { if (e.target === viewport || e.target === content) { isPanning = true; startX = e.clientX - posX; startY = e.clientY - posY; } });
+        window.addEventListener('mousemove', (e) => { if (isPanning) { posX = e.clientX - startX; posY = e.clientY - startY; updateTransform(); } });
+        window.addEventListener('mouseup', () => isPanning = false);
+
+        function zoom(delta) { setZoom(scale + delta); }
+        function setZoom(val) { scale = Math.min(Math.max(0.15, parseFloat(val)), 3); zoomVal.innerText = Math.round(scale * 100) + '%'; zoomSlider.value = scale; updateTransform(); }
+        function updateTransform() { content.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
         // --- THEME LOGIC ---
         window.changeTheme = (theme) => {
             document.querySelectorAll('.bg-layer').forEach(l => l.style.display = 'none');
