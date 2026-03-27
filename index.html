@@ -221,8 +221,8 @@
             <button onclick="openNoteModal()" class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-bold shadow-2xl shadow-emerald-200 hover:translate-y-[-2px] active:scale-95 transition-all">
                 + Tạo Ghi Chú Mới
             </button>
-            <button onclick="copyInvite()" class="bg-pink-500 text-white p-3 rounded-xl w-full mb-4 font-bold shadow-md hover:bg-pink-600 transition-all">
-        🔗 Link mời 
+           <button onclick="window.copyInvite()" class="bg-pink-500 text-white p-3 rounded-xl w-full mb-4 font-bold shadow-md hover:bg-pink-600 transition-all">
+    🔗 Link mời cộng tác
     </button>
         </div>
 
@@ -639,10 +639,15 @@
 
         // Dán đoạn này vào cuối cùng, trước thẻ đóng </script>
     window.copyInvite = () => {
-        const inviteLink = window.location.origin + window.location.pathname + "#khong-gian-qank-lucy";
-        navigator.clipboard.writeText(inviteLink);
-        alert("Đã sao chép link không gian ! ❤️");
-    };
+    // Lấy link hiện tại và gắn thêm mã phòng vào sau dấu #
+    const inviteLink = window.location.origin + window.location.pathname + "#khong-gian-qank-lucy";
+    
+    navigator.clipboard.writeText(inviteLink).then(() => {
+        alert("Đã sao chép link không gian riêng của hai bạn! ❤️");
+    }).catch(err => {
+        console.error('Không thể sao chép: ', err);
+    });
+};
     </script>
 </body>
 </html>
