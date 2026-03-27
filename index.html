@@ -482,35 +482,20 @@
                 card.style.width = (n.width || 300) + 'px';
                 card.style.height = (n.height || 250) + 'px';
                 
-                // Thêm nút X vào Header
                 card.innerHTML = `
                     <div class="note-header">
                         <span class="text-[8px] font-bold opacity-30 tracking-widest">${(n.author || "ANON").toUpperCase()}</span>
-                        <button class="delete-btn hover:text-red-500 transition-colors p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
                     </div>
-                    <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
+                    <div class="flex-grow overflow-hidden flex flex-col">
                         ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
                         ${n.text ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.text}</p>` : ''}
                         ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
-                        ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media" style="pointer-events: auto;"></iframe>` : ''}
+                        ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media"></iframe>` : ''}
                     </div>
                     <div class="edit-hint">Nhấn đúp để chỉnh sửa</div>
-    `;
+                `;
 
-                    // SỰ KIỆN XÓA (MỚI)
-                    const deleteBtn = card.querySelector('.delete-btn');
-                    deleteBtn.addEventListener('mousedown', (e) => e.stopPropagation());
-                    deleteBtn.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        if (confirm("Xóa ghi chú này nhé?")) {
-                            await deleteDoc(doc(db, 'notes', n.id));
-                        }
-                    });
-                
-                    // SỰ KIỆN EDIT
-                    card.addEventListener('dblclick', () => window.openNoteModal(n));
+                card.addEventListener('dblclick', () => window.openNoteModal(n));
                 
             let resizeTimeout;
                 const resizeObserver = new ResizeObserver(entries => {
@@ -545,17 +530,12 @@
                 let cStartX, cStartY;
                 const header = card.querySelector('.note-header');
                 header.addEventListener('mousedown', (e) => {
-                   e.stopPropagation();
+                    e.stopPropagation();
                     cardDragging = true;
-                    document.querySelectorAll('.note-card').forEach(c => c.style.zIndex = 1);
-                    card.style.zIndex = 1000;
                     cStartX = e.clientX / scale - n.x;
                     cStartY = e.clientY / scale - n.y;
+                    card.style.zIndex = 2000;
                 });
-            
-                // ... (Giữ các sự kiện mousemove và mouseup cho card cũ của bạn) ...
-                container.appendChild(card);
-            });
 
                 window.addEventListener('mousemove', (e) => {
                     if (!cardDragging) return;
