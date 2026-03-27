@@ -289,7 +289,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query,where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // DÁN CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY
         const firebaseConfig = {
@@ -455,6 +455,7 @@
                 spotifyRaw: spotifyRaw || "",
                 spotifyEmbed: getSpotifyEmbed(spotifyRaw),
                 author: currentUser.displayName || document.getElementById('user-display').innerText || "Ẩn danh",
+                authorId: currentUser.uid, // <-- Dòng mới quan trọng nhất
                 updatedAt: Date.now() // Nên thêm thời gian cập nhật
             };
 
@@ -482,7 +483,10 @@
 
         function setupSync() {
             const notesCol = collection(db, 'notes');
-            onSnapshot(query(notesCol), (snapshot) => {
+            // Chỉ lấy ghi chú mà người tạo là CHÍNH BẠN
+            const q = query(notesCol, where("authorId", "==", currentUser.uid));
+            
+            onSnapshot(q, (snapshot) => {
                 renderNotes(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             });
         }
@@ -499,32 +503,38 @@
                 card.style.height = (n.height || 250) + 'px';
                 
                 // Thêm HTML nút X vào header
-                card.innerHTML = `
-                    <div class="note-header">
-                        <span class="text-[8px] font-bold opacity-30 tracking-widest">${(n.author || "ANON").toUpperCase()}</span>
-                        <button class="delete-btn text-gray-500 hover:text-red-500 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
-                    <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
-                        ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
-                        ${n.text ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.text}</p>` : ''}
-                        ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
-                        ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media" style="pointer-events: auto;"></iframe>` : ''}
-                    </div>
-                    <div class="edit-hint">Nhấn đúp để chỉnh sửa</div>
-                `;
+             card.innerHTML = `
+        <div class="note-header">
+            <span class="text-[8px] font-bold opacity-30 tracking-widest">${(n.author || "ANON").toUpperCase()}</span>
+            <button class="delete-btn text-gray-500 hover:text-red-500 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
+            ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
+            ${n.text ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.text}</p>` : ''}
+            ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
+            ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media" style="pointer-events: auto;"></iframe>` : ''}
+        </div>
+        <div class="edit-hint">Nhấn đúp để chỉnh sửa</div>
+    `;
 
-                // Logic Xử lý Xóa
-                const deleteBtn = card.querySelector('.delete-btn');
-                deleteBtn.addEventListener('mousedown', (e) => e.stopPropagation());
-                deleteBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    if (confirm("Bạn có chắc muốn xóa ghi chú này của Qank&Lucy không?")) {
-                        await deleteDoc(doc(db, 'notes', n.id));
-                    }
-                });
+    // Logic Xử lý Xóa
+    const deleteBtn = card.querySelector('.delete-btn');
 
+    // --- DÒNG CHÈN MỚI Ở ĐÂY ---
+    if (n.authorId !== currentUser.uid) {
+        deleteBtn.style.display = 'none';
+    }
+    // ---------------------------
+
+    deleteBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm("Bạn có chắc muốn xóa ghi chú này của Qank&Lucy không?")) {
+            await deleteDoc(doc(db, 'notes', n.id));
+        }
+    });
                 card.addEventListener('dblclick', () => window.openNoteModal(n));
 
                 // Logic Resize (Giữ nguyên của bạn nhưng đã tối ưu đường dẫn)
