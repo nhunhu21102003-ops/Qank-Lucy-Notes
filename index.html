@@ -292,7 +292,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query,where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // 2. DÁN DÒNG NÀY VÀO ĐÂY
         const roomId = "khong-gian-qank-lucy";
@@ -639,12 +639,10 @@
 
         // Dán đoạn này vào cuối cùng, trước thẻ đóng </script>
     window.copyInvite = () => {
-        // Tự tạo link chứa mã phòng cố định
         const inviteLink = window.location.origin + window.location.pathname + "#khong-gian-qank-lucy";
         navigator.clipboard.writeText(inviteLink);
-        alert("Đã sao chép link không gian riêng! ❤️");
+        alert("Đã sao chép link không gian ! ❤️");
     };
-    
     </script>
 </body>
 </html>
