@@ -23,48 +23,47 @@
         }
 
         /* Lớp nền chung */
-        .bg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; overflow: hidden; }
-        .football-bg { background: linear-gradient(to bottom, #1e3a1f, #064e3b); } /* Đổi màu xanh đậm cho sang */
+.bg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; overflow: hidden; }
 
-        /* Hiệu ứng các hạt: Tim, Cá, Bóng, Sao */
-        .heart, .fish, .ball, .star { 
-            position: absolute; 
-            pointer-events: none; 
-            will-change: transform, opacity; 
-        }
+/* Các hạt hiệu ứng */
+.heart, .fish, .ball, .star { 
+    position: absolute; 
+    pointer-events: none; 
+    will-change: transform, opacity; 
+}
 
-        /* Riêng cho Ngôi sao */
-        .star {
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 0 5px white;
-            animation: twinkle var(--duration, 3s) infinite ease-in-out;
-        }
+/* Hiệu ứng bay cho Cá, Tim, Bóng */
+.heart, .fish, .ball {
+    bottom: -50px; /* Bắt đầu từ dưới cùng màn hình */
+    opacity: 0.6;
+    animation: float var(--duration, 10s) infinite linear;
+}
 
-        /* Hiệu ứng Tim, Cá, Bóng bay từ dưới lên */
-        .heart, .fish, .ball {
-            opacity: 0.5;
-            animation: float var(--duration, 10s) infinite linear;
-        }
+/* Animation bay từ dưới lên trên */
+@keyframes float {
+    0% { 
+        transform: translateY(0) translateX(0) rotate(0deg); 
+        opacity: 0; 
+    }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.7; }
+    100% { 
+        transform: translateY(-120vh) translateX(50px) rotate(360deg); 
+        opacity: 0; 
+    }
+}
 
-        @keyframes float {
-            0% { transform: translateY(110vh) translateX(0) rotate(0deg); opacity: 0; }
-            20% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) translateX(40px) rotate(360deg); opacity: 0; }
-        }
+/* Riêng cho Ngôi sao (Zodiac) */
+.star {
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--duration, 3s) infinite ease-in-out;
+}
 
-        @keyframes twinkle {
-            0%, 100% { 
-                opacity: 0.2; 
-                transform: scale(0.8); 
-                box-shadow: 0 0 3px white;
-            }
-            50% { 
-                opacity: 1; 
-                transform: scale(1.3); 
-                box-shadow: 0 0 10px white, 0 0 15px #818cf8; 
-            }
-        }
+@keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 10px white; }
+}
         #canvas-viewport { width: 100vw; height: 100vh; cursor: grab; overflow: hidden; position: relative; z-index: 1; }
         #canvas-viewport:active { cursor: grabbing; }
         #canvas-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
@@ -619,38 +618,40 @@
             });
         }
 
-        window.renderParticles = (id, theme) => {
-            const layer = document.getElementById(id);
-            if (!layer) return;
-            layer.innerHTML = '';
-            
-            const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
-            const count = theme === 'zodiac' ? 150 : 40; // 150 sao lấp lánh
-            const fragment = document.createDocumentFragment();
+       window.renderParticles = (id, theme) => {
+    const layer = document.getElementById(id);
+    if (!layer) return;
+    layer.innerHTML = '';
+    
+    const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
+    const count = theme === 'zodiac' ? 150 : 40; 
+    const fragment = document.createDocumentFragment();
 
-            for(let i=0; i < count; i++) {
-                const p = document.createElement('div');
-                p.style.left = Math.random() * 100 + 'vw';
-                p.style.animationDelay = Math.random() * 8 + 's';
+    for(let i=0; i < count; i++) {
+        const p = document.createElement('div');
+        
+        // Vị trí ngang ngẫu nhiên cho tất cả
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.animationDelay = Math.random() * 15 + 's';
 
-                if(theme === 'zodiac') {
-                    p.className = 'star';
-                    const size = Math.random() * 2 + 1;
-                    p.style.width = size + 'px';
-                    p.style.height = size + 'px';
-                    p.style.top = Math.random() * 100 + 'vh';
-                    p.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
-                } else {
-                    p.className = theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
-                    p.innerHTML = configs[theme];
-                    p.style.fontSize = (Math.random() * 10 + 15) + 'px';
-                    p.style.top = (Math.random() * 50 + 100) + 'vh';
-                    p.style.setProperty('--duration', (Math.random() * 6 + 10) + 's');
-                }
-                fragment.appendChild(p);
-            }
-            layer.appendChild(fragment);
-        };
+        if(theme === 'zodiac') {
+            p.className = 'star';
+            const size = Math.random() * 2 + 1;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.top = Math.random() * 100 + 'vh'; // Sao rải khắp màn hình
+            p.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+        } else {
+            p.className = theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
+            p.innerHTML = configs[theme];
+            p.style.fontSize = (Math.random() * 15 + 20) + 'px'; // Kích thước icon to hơn xíu cho đẹp
+            p.style.bottom = "-50px"; // Đặt ở dưới cùng để chuẩn bị bay lên
+            p.style.setProperty('--duration', (Math.random() * 7 + 8) + 's');
+        }
+        fragment.appendChild(p);
+    }
+    layer.appendChild(fragment);
+};
 
         const viewport = document.getElementById('canvas-viewport');
         viewport.addEventListener('mousedown', (e) => {
