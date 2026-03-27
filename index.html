@@ -42,15 +42,32 @@
         #canvas-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
 
         .note-card {
-            position: absolute; min-width: 200px; min-height: 150px; background: rgba(255, 255, 255, 0.9);
-            padding: 1.2rem; border-radius: 2rem;
+            position: absolute; 
+            min-width: 200px; 
+            min-height: 150px; 
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.2rem; 
+            border-radius: 2rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
-            display: flex; flex-direction: column;
+            display: flex; 
+            flex-direction: column;
             border: 2px solid transparent;
-            backdrop-filter: blur(10px); transition: box-shadow 0.3s, transform 0.2s;
+            backdrop-filter: blur(10px); 
+            transition: box-shadow 0.3s, transform 0.2s;
             user-select: none;
             overflow: hidden;
             resize: both;
+            
+            /* CỰC KỲ QUAN TRỌNG: Ngăn lỗi nhảy kích thước */
+            box-sizing: border-box; 
+            
+            /* Đảm bảo phần resize không bị che khuất bởi padding */
+            padding-bottom: 1.5rem; 
+        }
+        
+        /* Tùy chỉnh thêm để tay nắm resize dễ nhìn hơn (tùy chọn) */
+        .note-card::-webkit-resizer {
+            background-color: transparent;
         }
         .note-header {
             cursor: move; margin: -1.2rem -1.2rem 0.75rem -1.2rem;
@@ -481,18 +498,22 @@
                 card.addEventListener('dblclick', () => window.openNoteModal(n));
 
                 let resizeTimeout;
-                const resizeObserver = new ResizeObserver(entries => {
+                            const resizeObserver = new ResizeObserver(entries => {
                     for (let entry of entries) {
                         clearTimeout(resizeTimeout);
                         resizeTimeout = setTimeout(async () => {
-                            const { width, height } = entry.contentRect;
-                            if (Math.abs(width - (n.width||300)) > 5 || Math.abs(height - (n.height||250)) > 5) {
-                                await updateDoc(doc(db, 'notes', n.id), {
-                                    width: width + 40,
-                                    height: height + 60
+                            // Sử dụng offsetWidth để lấy kích thước thực tế hiển thị của thẻ
+                            const newWidth = entry.target.offsetWidth;
+                            const newHeight = entry.target.offsetHeight;
+                
+                            // Chỉ cập nhật nếu sự khác biệt đủ lớn (tránh nhảy số nhỏ)
+                            if (Math.abs(newWidth - (n.width || 300)) > 2 || Math.abs(newHeight - (n.height || 250)) > 2) {
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notes', n.id), {
+                                    width: newWidth,
+                                    height: newHeight
                                 });
                             }
-                        }, 1000);
+                        }, 1000); // Đợi 1s sau khi ngừng kéo mới lưu để tránh lag
                     }
                 });
                 resizeObserver.observe(card);
