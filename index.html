@@ -183,7 +183,22 @@
     </style>
 </head>
 <body>
-
+<div id="share-controls" class="fixed top-6 right-6 z-[1001] flex flex-col gap-2 items-end">
+    <button onclick="copyShareLink()" class="bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-emerald-100 font-bold text-emerald-600 hover:scale-105 transition-all flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        Chia sẻ phòng
+    </button>
+    
+    <div id="owner-only-controls" class="hidden flex items-center bg-white/90 backdrop-blur p-2 rounded-full shadow-md border border-gray-100">
+        <span class="text-[10px] font-bold text-gray-400 px-2 uppercase">Quyền bạn bè:</span>
+        <button id="btn-lock" onclick="toggleRoomLock(true)" class="p-2 rounded-full hover:bg-red-50 text-gray-400 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </button>
+        <button id="btn-unlock" onclick="toggleRoomLock(false)" class="p-2 rounded-full hover:bg-emerald-50 text-emerald-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+        </button>
+    </div>
+</div>
     <div id="mint-layer" class="bg-layer"></div>
     <div id="pink-layer" class="bg-layer" style="background-color: #ffb6c1;"></div>
     <div id="zodiac-layer" class="bg-layer" style="background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);"></div>
@@ -320,6 +335,41 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query,where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+         // Thêm vào đầu phần script
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = urlParams.get('room'); // Lấy mã phòng từ URL
+let isLocked = false; // Trạng thái khóa phòng (chỉ xem)
+
+// Hàm copy link chia sẻ
+window.copyShareLink = () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentUser.uid}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert("Đã copy link! Gửi cho bạn bè để vào chung không gian của Qank&Lucy nhé.");
+};
+    window.toggleRoomLock = async (locked) => {
+    if (currentUser.uid !== roomId && roomId !== null) return; 
+    await setDoc(doc(db, 'roomStates', currentUser.uid), { isLocked: locked }, { merge: true });
+};
+
+// Theo dõi trạng thái phòng
+function listenToRoomState(targetRoomId) {
+    onSnapshot(doc(db, 'roomStates', targetRoomId), (doc) => {
+        if (doc.exists()) {
+            isLocked = doc.data().isLocked;
+            updateLockUI();
+        }
+    });
+}
+
+function updateLockUI() {
+    const canEdit = (currentUser.uid === roomId || !roomId) || !isLocked;
+    // Ẩn/hiện nút "Tạo ghi chú" dựa trên quyền
+    document.querySelector('[onclick="openNoteModal()"]').style.display = canEdit ? 'block' : 'none';
+    
+    // Cập nhật màu sắc nút khóa để bạn biết trạng thái
+    document.getElementById('btn-lock').classList.toggle('text-red-500', isLocked);
+    document.getElementById('btn-unlock').classList.toggle('text-emerald-500', !isLocked);
+}    
         // DÁN CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY
         const firebaseConfig = {
             apiKey: "AIzaSyDlxbLJyfCHZuzd0DVSQAy65J-CIFg0uCM",
@@ -494,6 +544,7 @@
                 spotifyRaw: spotifyRaw || "",
                 spotifyEmbed: getSpotifyEmbed(spotifyRaw),
                 author: currentUser.displayName || document.getElementById('user-display').innerText || "Ẩn danh",
+                roomId: roomId || currentUser.uid, // Ghi chú thuộc về phòng nào
                 authorId: currentUser.uid, // <-- Dòng mới quan trọng nhất
                 updatedAt: Date.now() // Nên thêm thời gian cập nhật
             };
@@ -520,15 +571,24 @@
     }
 };
 
-        function setupSync() {
-            const notesCol = collection(db, 'notes');
-            // Chỉ lấy ghi chú mà người tạo là CHÍNH BẠN
-            const q = query(notesCol, where("authorId", "==", currentUser.uid));
-            
-            onSnapshot(q, (snapshot) => {
-                renderNotes(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-            });
-        }
+       function setupSync() {
+    const targetRoom = roomId || currentUser.uid;
+    
+    // Nếu là chủ phòng, hiện bảng điều khiển khóa
+    if (!roomId || roomId === currentUser.uid) {
+        document.getElementById('owner-only-controls').classList.remove('hidden');
+    }
+
+    listenToRoomState(targetRoom);
+
+    const notesCol = collection(db, 'notes');
+    // Lấy ghi chú thuộc về phòng này (thay vì authorId)
+    const q = query(notesCol, where("roomId", "==", targetRoom));
+    
+    onSnapshot(q, (snapshot) => {
+        renderNotes(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+}
 
         function renderNotes(notes) {
           const container = document.getElementById('canvas-content');
