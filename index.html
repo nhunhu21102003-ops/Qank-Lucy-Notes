@@ -488,7 +488,7 @@ function updateLockUI() {
                 editingNoteId = note.id;
                 document.getElementById('modal-title').innerText = 'Chỉnh sửa Ghi chú';
                 document.getElementById('note-title-input').value = note.title || '';
-                document.getElementById('note-input').value = note.text || '';
+                document.getElementById('note-input').value = note.content || '';
                 document.getElementById('image-url-input').value = note.imageUrl || '';
                 document.getElementById('spotify-url-input').value = note.spotifyRaw || '';
                 setActiveColor(note.color || 'mint');
@@ -537,7 +537,7 @@ function updateLockUI() {
 
             const noteData = {
                 title: title || "",
-                text: text || "",
+                content: text || "",
                 color: activeColor,
                 font: activeFont,
                 imageUrl: imageUrl || "",
@@ -611,7 +611,7 @@ function updateLockUI() {
         </div>
         <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
             ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
-            ${n.text ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.text}</p>` : ''}
+            ${n.content ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.text}</p>` : ''}
             ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
             ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media" style="pointer-events: auto;"></iframe>` : ''}
         </div>
