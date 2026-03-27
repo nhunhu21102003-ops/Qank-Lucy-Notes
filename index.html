@@ -402,25 +402,25 @@
             document.getElementById('canvas-content').style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
 
-        window.changeTheme = (theme) => {
-    // Ẩn tất cả các lớp nền cũ 
+       window.changeTheme = (theme) => {
+    // Ẩn tất cả các lớp nền
     document.querySelectorAll('.bg-layer').forEach(l => l.style.display = 'none');
     
     const layer = document.getElementById(theme + '-layer');
     if (layer) {
-        layer.style.display = 'block'; [cite: 111]
+        layer.style.display = 'block';
         
-        // Chỉ tạo hiệu ứng nếu theme đó có trong danh sách cấu hình hạt bay [cite: 112]
-        const hasParticles = ['mint', 'pink', 'zodiac', 'messi'].includes(theme);
-        if (hasParticles) {
+        // Danh sách các theme CÓ hiệu ứng hạt (theo mã gốc của bạn)
+        const effectThemes = ['mint', 'pink', 'zodiac', 'messi'];
+        
+        if (effectThemes.includes(theme)) {
             window.renderParticles(theme + '-layer', theme);
         } else {
-            // Xóa sạch các hạt cũ nếu chuyển sang theme không hiệu ứng
-            layer.innerHTML = '';
+            // Theme mới (newtheme) sẽ không chạy renderParticles nên không bị lỗi
+            layer.innerHTML = ''; 
         }
     }
 };
-
         window.setActiveColor = (color) => {
             activeColor = color;
             document.querySelectorAll('#color-picker .color-dot').forEach(b => b.classList.remove('active'));
