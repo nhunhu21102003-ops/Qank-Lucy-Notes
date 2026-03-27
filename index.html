@@ -496,24 +496,32 @@
                 `;
 
                 card.addEventListener('dblclick', () => window.openNoteModal(n));
-
-                let resizeTimeout;
-                            const resizeObserver = new ResizeObserver(entries => {
-                    for (let entry of entries) {
-                        clearTimeout(resizeTimeout);
-                        resizeTimeout = setTimeout(async () => {
-                            // Sử dụng offsetWidth để lấy kích thước thực tế hiển thị của thẻ
-                            const newWidth = entry.target.offsetWidth;
-                            const newHeight = entry.target.offsetHeight;
                 
-                            // Chỉ cập nhật nếu sự khác biệt đủ lớn (tránh nhảy số nhỏ)
-                            if (Math.abs(newWidth - (n.width || 300)) > 2 || Math.abs(newHeight - (n.height || 250)) > 2) {
-                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notes', n.id), {
-                                    width: newWidth,
-                                    height: newHeight
-                                });
-                            }
-                        }, 1000); // Đợi 1s sau khi ngừng kéo mới lưu để tránh lag
+            let resizeTimeout;
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        // 1. Lấy kích thước thực tế sau khi kéo
+                        const newWidth = Math.round(entry.target.offsetWidth);
+                        const newHeight = Math.round(entry.target.offsetHeight);
+                
+                        // 2. Kiểm tra nếu kích thước thực sự khác với dữ liệu hiện tại
+                        if (Math.abs(newWidth - (n.width || 300)) > 5 || Math.abs(newHeight - (n.height || 250)) > 5) {
+                            clearTimeout(resizeTimeout);
+                            
+                            // 3. Đợi 1 giây sau khi ngừng kéo mới lưu (tránh lag và xung đột render)
+                            resizeTimeout = setTimeout(async () => {
+                                try {
+                                    // SỬA LẠI ĐƯỜNG DẪN: Phải trùng với đường dẫn lúc tạo (nằm trong collection 'notes')
+                                    const noteRef = doc(db, 'notes', n.id);
+                                    await updateDoc(noteRef, {
+                                        width: newWidth,
+                                        height: newHeight
+                                    });
+                                } catch (err) {
+                                    console.error("Lỗi cập nhật kích thước:", err);
+                                }
+                            }, 1000); 
+                        }
                     }
                 });
                 resizeObserver.observe(card);
