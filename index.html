@@ -24,7 +24,13 @@
 
         .bg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
         .heart, .fish, .ball { position: absolute; opacity: 0.3; animation: float 10s infinite linear; }
-        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle 3s infinite ease-in-out; }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            filter: blur(1px); /* Làm ngôi sao trông mềm mại hơn */
+            opacity: 0;
+            animation: twinkle var(--duration, 3s) infinite ease-in-out;}        
         .football-bg { background: linear-gradient(to bottom, #74c476, #238b45); }
 
         @keyframes float {
@@ -33,9 +39,17 @@
             100% { transform: translateY(-10vh) translateX(20px) rotate(360deg); opacity: 0; }
         }
         @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
+        0%, 100% { 
+            opacity: 0.3; 
+            transform: scale(1); 
+            box-shadow: 0 0 5px white;
         }
+        50% { 
+            opacity: 1; 
+            transform: scale(1.5); 
+            box-shadow: 0 0 15px white, 0 0 20px #818cf8; /* Tạo hiệu ứng tỏa sáng màu tím nhẹ */
+        }
+    }
 
         #canvas-viewport { width: 100vw; height: 100vh; cursor: grab; overflow: hidden; position: relative; z-index: 1; }
         #canvas-viewport:active { cursor: grabbing; }
@@ -592,19 +606,42 @@
         }
 
         function renderParticles(id, theme) {
-            const layer = document.getElementById(id);
-            layer.innerHTML = '';
-            const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
-            const count = theme === 'zodiac' ? 60 : 15;
-            for(let i=0; i<count; i++) {
-                const p = document.createElement('div');
-                p.className = theme === 'zodiac' ? 'star' : theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
-                if(theme !== 'zodiac') p.innerHTML = configs[theme];
-                p.style.left = Math.random()*100+'vw';
-                p.style.animationDelay = Math.random()*8+'s';
-                layer.appendChild(p);
-            }
+    const layer = document.getElementById(id);
+    if (!layer) return; // Bảo vệ code nếu layer không tồn tại
+    layer.innerHTML = '';
+    
+    const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
+    const count = theme === 'zodiac' ? 100 : 15; // Tăng lên 100 ngôi sao cho lung linh
+
+    for(let i=0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = theme === 'zodiac' ? 'star' : theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
+        
+        if(theme !== 'zodiac') {
+            p.innerHTML = configs[theme];
+        } else {
+            // --- PHẦN THÊM CHO NGÔI SAO ---
+            const size = Math.random() * 3 + 1; // Ngôi sao từ 1px đến 4px
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.backgroundColor = 'white';
+            p.style.borderRadius = '50%';
+            p.style.position = 'absolute';
+            // ------------------------------
         }
+
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.top = Math.random() * 100 + 'vh'; // Thêm dòng này để sao rải đều màn hình
+        p.style.animationDelay = Math.random() * 5 + 's';
+        
+        // Tạo thời gian lấp lánh ngẫu nhiên cho mỗi ngôi sao (biến --duration đã định nghĩa ở CSS)
+        if(theme === 'zodiac') {
+            p.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+        }
+
+        layer.appendChild(p);
+    }
+}
 
         const viewport = document.getElementById('canvas-viewport');
         viewport.addEventListener('mousedown', (e) => {
