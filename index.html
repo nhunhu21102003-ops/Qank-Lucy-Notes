@@ -491,11 +491,12 @@ window.setActiveFont = (f) => {
             }
         }
     };
-     window.handleLogout = async () => {
+  /* ĐOẠN MÃ SAU KHI SỬA */
+window.handleLogout = async () => {
     if (confirm("Bạn có chắc muốn đăng xuất?")) {
         try {
-            await signOut(auth); [cite: 102]
-            location.reload(); 
+            await signOut(auth);
+            location.reload(); // Chỉ giữ lại dòng này
         } catch (error) {
             console.error("Lỗi đăng xuất:", error);
         }
