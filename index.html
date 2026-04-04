@@ -470,6 +470,13 @@ window.setActiveFont = (f) => {
 
     // --- AUTH (GIỮ NGUYÊN) ---
    // --- AUTH (ĐÃ SỬA: BẮT BUỘC NHẬP TÊN) ---
+      function updateUI(name) {
+    const userDisplay = document.getElementById('user-display');
+    const userInitial = document.getElementById('user-initial');
+    if (userDisplay) userDisplay.innerText = name;
+    if (userInitial) userInitial.innerText = name[0] ? name[0].toUpperCase() : "?";
+}
+
   window.login = async (type) => {
     const authOverlay = document.getElementById('auth-overlay');
     
@@ -510,6 +517,20 @@ window.setActiveFont = (f) => {
         }
     }
 };
+     onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        // Nếu là Google thì lấy tên Google, nếu là Guest thì lấy tên đã nhập (hoặc dùng 'Ẩn danh')
+        const nameToDisplay = user.displayName || document.getElementById('user-display').innerText || "Khách";
+        updateUI(nameToDisplay);
+        
+        setupSync();
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('toggle-sidebar')?.classList.remove('hidden');
+    } else {
+        document.getElementById('auth-overlay').style.display = 'flex';
+    }
+});
   /* ĐOẠN MÃ SAU KHI SỬA */
 window.handleLogout = async () => {
     if (confirm("Bạn có chắc muốn đăng xuất?")) {
@@ -531,20 +552,6 @@ window.toggleSidebar = () => {
     }
 };
 
-    function updateUI(name) {
-        document.getElementById('user-display').innerText = name;
-        document.getElementById('user-initial').innerText = name[0].toUpperCase();
-    }
-
-onAuthStateChanged(auth, (user) => {
-    if (user) { 
-        currentUser = user; 
-        if (user.displayName) updateUI(user.displayName);
-        setupSync(); 
-        // Hiện nút 3 gạch sau khi đã vào phòng
-        document.getElementById('toggle-sidebar')?.classList.remove('hidden');
-    }
-});
     // --- THEME & PARTICLES (GIỮ NGUYÊN 100%) ---
     window.changeTheme = (theme) => {
         document.querySelectorAll('.bg-layer').forEach(l => l.style.display = 'none');
