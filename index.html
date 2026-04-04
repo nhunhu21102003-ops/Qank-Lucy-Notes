@@ -462,35 +462,46 @@ window.setActiveFont = (f) => {
 
     // --- AUTH (GIỮ NGUYÊN) ---
    // --- AUTH (ĐÃ SỬA: BẮT BUỘC NHẬP TÊN) ---
-    window.login = async (type) => {
-        if (type === 'google') {
-            try {
-                await signInWithPopup(auth, provider); [cite: 102]
-                document.getElementById('auth-overlay').style.display = 'none';
-            } catch (error) { 
-                console.error("Lỗi đăng nhập Google:", error); 
-                alert("Không thể đăng nhập bằng Google, thử lại sau nhé!");
-            }
-        } else if (type === 'guest') {
-            const nameInput = document.getElementById('guest-name');
-            const name = nameInput.value.trim();
-
-            // KIỂM TRA TÊN: Nếu trống thì không cho vào
-            if (!name) {
-                alert("iu ơi, nhập tên vào ô trắng rồi mới nhấn nút được nè! ❤️");
-                nameInput.focus();
-                return; // Dừng lại ở đây, không chạy lệnh đăng nhập bên dưới
-            }
-
-            updateUI(name);
-            document.getElementById('auth-overlay').style.display = 'none';
-            try {
-                await signInAnonymously(auth); [cite: 102]
-            } catch (error) {
-                console.error("Lỗi đăng nhập khách:", error);
-            }
+  window.login = async (type) => {
+    const authOverlay = document.getElementById('auth-overlay');
+    
+    if (type === 'google') {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            // Sau khi đăng nhập thành công, ẩn lớp phủ
+            if (authOverlay) authOverlay.style.display = 'none';
+        } catch (error) { 
+            console.error("Lỗi đăng nhập Google:", error);
+            alert("Không thể đăng nhập bằng Google, thử lại sau nhé!");
         }
-    };
+    } else if (type === 'guest') {
+        const nameInput = document.getElementById('guest-name');
+        const name = nameInput.value.trim();
+
+        if (!name) {
+            alert("iu ơi, nhập tên vào ô trắng rồi mới nhấn nút được nè! ❤️");
+            nameInput.focus();
+            return;
+        }
+
+        try {
+            // Thực hiện đăng nhập ẩn danh trước
+            await signInAnonymously(auth);
+            
+            // Lưu tên vào localStorage hoặc cập nhật trực tiếp vì 
+            // đăng nhập ẩn danh không có displayName sẵn như Google
+            if (auth.currentUser) {
+                // Bạn có thể dùng hàm updateUI thủ công ở đây
+                updateUI(name); 
+            }
+            
+            if (authOverlay) authOverlay.style.display = 'none';
+        } catch (error) {
+            console.error("Lỗi đăng nhập khách:", error);
+            alert("Có lỗi xảy ra khi đăng nhập khách.");
+        }
+    }
+};
   /* ĐOẠN MÃ SAU KHI SỬA */
 window.handleLogout = async () => {
     if (confirm("Bạn có chắc muốn đăng xuất?")) {
