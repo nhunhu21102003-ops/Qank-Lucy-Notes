@@ -234,7 +234,10 @@
     <div id="zodiac-layer" class="bg-layer" style="background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);"></div>
     <div id="messi-layer" class="bg-layer football-bg" style="background-image: url('https://www.chromethemer.com/download/hd-wallpapers/lionel-messi-dark-3840x2160.jpg'); background-size: cover; background-position: center;"></div>
     <div id="newtheme-layer" class="bg-layer" style="background-image: url('https://wallpapercave.com/wp/wp14442504.png'); background-size: cover; background-position: center;"></div>
-  
+  <div id="yellow-layer" class="bg-layer" style="background-color: #fef9c3;"></div>
+    <div id="blue-layer" class="bg-layer" style="background-color: #e0f2fe;"></div>
+    <div id="orange-layer" class="bg-layer" style="background-color: #ffedd5;"></div>
+ 
     <div id="auth-overlay">
         <div class="bg-white p-10 rounded-[3.5rem] shadow-2xl max-w-md w-full text-center">
             <h1 class="text-3xl font-bold text-gray-800 mb-6 font-pacifico">Qank&Lucy Notes!</h1>
@@ -288,8 +291,10 @@
                     <button onclick="changeTheme('pink')" class="aspect-square rounded-2xl bg-pink-100 border-2 border-white shadow-sm hover:scale-110">💖</button>
                     <button onclick="changeTheme('zodiac')" class="aspect-square rounded-2xl bg-indigo-900 border-2 border-white shadow-sm hover:scale-110">✨</button>
                     <button onclick="changeTheme('messi')" class="aspect-square rounded-2xl bg-green-500 border-2 border-white shadow-sm hover:scale-110">⚽</button>
-                <button onclick="changeTheme('newtheme')" class="aspect-square rounded-2xl bg-gray-200 border-2 border-white shadow-sm hover:scale-110">💙</button>
-    </div>
+                    <button onclick="changeTheme('newtheme')" class="aspect-square rounded-2xl bg-gray-200 border-2 border-white shadow-sm hover:scale-110">💙</button>
+                    <button onclick="changeTheme('yellow')" class="aspect-square rounded-2xl bg-yellow-100 border-2 border-white shadow-sm hover:scale-110">🌼</button>
+                     <button onclick="changeTheme('orange')" class="aspect-square rounded-2xl bg-orange-100 border-2 border-white shadow-sm hover:scale-110">🍊</button>
+</div>
 </div>
 
             <button onclick="openNoteModal()" class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-bold shadow-2xl shadow-emerald-200 hover:translate-y-[-2px] active:scale-95 transition-all">
@@ -543,7 +548,7 @@ onAuthStateChanged(auth, (user) => {
         const layer = document.getElementById(theme + '-layer');
         if (layer) {
             layer.style.display = 'block';
-            const effectThemes = ['mint', 'pink', 'zodiac', 'messi'];
+            const effectThemes = ['mint', 'pink', 'zodiac', 'messi', 'yellow', 'blue', 'orange'];
             if (effectThemes.includes(theme)) {
                 window.renderParticles(theme + '-layer', theme);
             } else {
@@ -556,7 +561,12 @@ onAuthStateChanged(auth, (user) => {
         const layer = document.getElementById(id);
         if (!layer) return;
         layer.innerHTML = '';
-        const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
+        const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽', yellow: 
+    window.renderParticles = (id, theme) => {
+        const layer = document.getElementById(id);
+        if (!layer) return;
+        layer.innerHTML = '';
+        const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽', yellow: '🍋', blue: '🐧', orange: '🍊'};
         const count = theme === 'zodiac' ? 150 : 40; 
         const fragment = document.createDocumentFragment();
         for(let i=0; i < count; i++) {
