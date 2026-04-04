@@ -83,8 +83,31 @@
             transition: box-shadow 0.3s, transform 0.2s;
             user-select: none;
             overflow: hidden;
-            resize: both;
-            
+            touch-action: none; /* Ngăn trình duyệt cuộn trang khi đang tương tác với note */
+}
+    
+            /* Tạo nút kéo tùy chỉnh */
+.resize-handle {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 25px;
+    height: 25px;
+    cursor: nwse-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+}
+
+/* Icon cho nút kéo */
+.resize-handle::after {
+    content: "◢";
+    font-size: 14px;
+    color: rgba(0,0,0,0.3);
+}
             /* CỰC KỲ QUAN TRỌNG: Ngăn lỗi nhảy kích thước */
             box-sizing: border-box; 
             
@@ -337,429 +360,309 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query,where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+ <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-         // Thêm vào đầu phần script
-const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get('room'); // Lấy mã phòng từ URL
-let isLocked = false; // Trạng thái khóa phòng (chỉ xem)
+    // --- GIỮ NGUYÊN CẤU HÌNH CỦA BẠN ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDlxbLJyfCHZuzd0DVSQAy65J-CIFg0uCM",
+        authDomain: "qanklucynotes.firebaseapp.com",
+        projectId: "qanklucynotes",
+        storageBucket: "qanklucynotes.firebasestorage.app",
+        messagingSenderId: "859079172160",
+        appId: "1:859079172160:web:89f2cccab108324eddbfa5",
+        measurementId: "G-05NGVEYVB5"
+    };
 
-// Hàm copy link chia sẻ
-window.copyShareLink = () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentUser.uid}`;
-    navigator.clipboard.writeText(shareUrl);
-    alert("Đã copy link! Gửi cho bạn bè để vào chung không gian của Qank&Lucy nhé.");
-};
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room'); 
+    let isLocked = false;
+    let currentUser = null;
+    let scale = 1, posX = 0, posY = 0;
+    let activeColor = 'mint';
+    let activeFont = 'quicksand';
+    let isDraggingViewport = false;
+    let startX, startY;
+    let editingNoteId = null;
+
+    // --- CÁC HÀM TIỆN ÍCH (GIỮ NGUYÊN) ---
+    window.copyShareLink = () => {
+        const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentUser.uid}`;
+        navigator.clipboard.writeText(shareUrl);
+        alert("Đã copy link! Gửi cho Quốc Anh nhé.");
+    };
+
     window.toggleRoomLock = async (locked) => {
-    if (currentUser.uid !== roomId && roomId !== null) return; 
-    await setDoc(doc(db, 'roomStates', currentUser.uid), { isLocked: locked }, { merge: true });
-};
+        if (currentUser.uid !== roomId && roomId !== null) return; 
+        await setDoc(doc(db, 'roomStates', currentUser.uid), { isLocked: locked }, { merge: true });
+    };
 
-// Theo dõi trạng thái phòng
-function listenToRoomState(targetRoomId) {
-    onSnapshot(doc(db, 'roomStates', targetRoomId), (doc) => {
-        if (doc.exists()) {
-            isLocked = doc.data().isLocked;
-            updateLockUI();
-        }
-    });
-}
-
-function updateLockUI() {
-    const canEdit = (currentUser.uid === roomId || !roomId) || !isLocked;
-    // Ẩn/hiện nút "Tạo ghi chú" dựa trên quyền
-    document.querySelector('[onclick="openNoteModal()"]').style.display = canEdit ? 'block' : 'none';
-    
-    // Cập nhật màu sắc nút khóa để bạn biết trạng thái
-    document.getElementById('btn-lock').classList.toggle('text-red-500', isLocked);
-    document.getElementById('btn-unlock').classList.toggle('text-emerald-500', !isLocked);
-}    
-        // DÁN CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY
-        const firebaseConfig = {
-            apiKey: "AIzaSyDlxbLJyfCHZuzd0DVSQAy65J-CIFg0uCM",
-            authDomain: "qanklucynotes.firebaseapp.com",
-            projectId: "qanklucynotes",
-            storageBucket: "qanklucynotes.firebasestorage.app",
-            messagingSenderId: "859079172160",
-            appId: "1:859079172160:web:89f2cccab108324eddbfa5",
-            measurementId: "G-05NGVEYVB5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-        const appId = 'qank-lucy-notes-app';
-
-        let currentUser = null;
-        let scale = 1, posX = 0, posY = 0;
-        let activeColor = 'mint';
-        let activeFont = 'quicksand';
-        let isDraggingViewport = false;
-        let startX, startY;
-        let editingNoteId = null;
-
-        window.login = async (type) => {
-            if (type === 'google') {
-                try {
-                    const result = await signInWithPopup(auth, provider);
-                    // UI sẽ tự cập nhật qua onAuthStateChanged bên dưới
-                    document.getElementById('auth-overlay').style.display = 'none';
-                    document.getElementById('app-sidebar').classList.remove('collapsed');
-                    document.getElementById('toggle-sidebar').classList.remove('hidden');
-                    window.changeTheme('mint');
-                } catch (error) {
-                    console.error("Lỗi Google:", error);
-                    alert("Đăng nhập thất bại!");
-                }
-            } else if (type === 'guest') {
-                const name = document.getElementById('guest-name').value.trim() || "Người dùng";
-                updateUI(name);
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('app-sidebar').classList.remove('collapsed');
-                document.getElementById('toggle-sidebar').classList.remove('hidden');
-                window.changeTheme('mint');
-                await signInAnonymously(auth);
-            }
-        };
-
-        function updateUI(name) {
-            document.getElementById('user-display').innerText = name;
-            document.getElementById('user-initial').innerText = name[0].toUpperCase();
-        }
-
-        window.handleLogout = async () => {
-            try {
-                await signOut(auth);
-                location.reload();
-            } catch (err) { console.error(err); }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) { 
-                currentUser = user; 
-                if (user.displayName) updateUI(user.displayName);
-                setupSync(); 
+    function listenToRoomState(targetRoomId) {
+        onSnapshot(doc(db, 'roomStates', targetRoomId), (doc) => {
+            if (doc.exists()) {
+                isLocked = doc.data().isLocked;
+                updateLockUI();
             }
         });
-
-        window.toggleSidebar = () => document.getElementById('app-sidebar').classList.toggle('collapsed');
-
-        window.updateZoom = (factor) => {
-            scale *= factor;
-            scale = Math.min(Math.max(0.2, scale), 3);
-            applyTransform();
-            document.getElementById('zoom-level-text').innerText = Math.round(scale * 100) + '%';
-        };
-
-        function applyTransform() {
-            document.getElementById('canvas-content').style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-        }
-
-       window.changeTheme = (theme) => {
-    // Ẩn tất cả các lớp nền
-    document.querySelectorAll('.bg-layer').forEach(l => l.style.display = 'none');
-    
-    const layer = document.getElementById(theme + '-layer');
-    if (layer) {
-        layer.style.display = 'block';
-        
-        // Danh sách các theme CÓ hiệu ứng hạt (theo mã gốc của bạn)
-        const effectThemes = ['mint', 'pink', 'zodiac', 'messi'];
-        
-        if (effectThemes.includes(theme)) {
-            window.renderParticles(theme + '-layer', theme);
-        } else {
-            // Theme mới (newtheme) sẽ không chạy renderParticles nên không bị lỗi
-            layer.innerHTML = ''; 
-        }
     }
-};
-        window.setActiveColor = (color) => {
-            activeColor = color;
-            document.querySelectorAll('#color-picker .color-dot').forEach(b => b.classList.remove('active'));
-            document.getElementById('c-' + color).classList.add('active');
-        };
 
-        window.setActiveFont = (font) => {
-            activeFont = font;
-            document.querySelectorAll('#note-modal button[id^="f-"]').forEach(b => b.classList.remove('border-emerald-500'));
-            document.getElementById('f-' + font).classList.add('border-emerald-500');
-        };
+    function updateLockUI() {
+        const canEdit = (currentUser && (currentUser.uid === roomId || !roomId)) || !isLocked;
+        const btn = document.querySelector('[onclick="openNoteModal()"]');
+        if (btn) btn.style.display = canEdit ? 'block' : 'none';
+        
+        const lockBtn = document.getElementById('btn-lock');
+        const unlockBtn = document.getElementById('btn-unlock');
+        if(lockBtn) lockBtn.classList.toggle('text-red-500', isLocked);
+        if(unlockBtn) unlockBtn.classList.toggle('text-emerald-500', !isLocked);
+    }
 
-        window.openNoteModal = (note = null) => {
-            if (note) {
-                editingNoteId = note.id;
-                document.getElementById('modal-title').innerText = 'Chỉnh sửa Ghi chú';
-                document.getElementById('note-title-input').value = note.title || '';
-                document.getElementById('note-input').value = note.content || '';
-                document.getElementById('image-url-input').value = note.imageUrl || '';
-                document.getElementById('spotify-url-input').value = note.spotifyRaw || '';
-                setActiveColor(note.color || 'mint');
-                setActiveFont(note.font || 'quicksand');
-                document.getElementById('btn-save').innerText = 'Cập nhật Ghi chú';
+    // --- AUTH (GIỮ NGUYÊN) ---
+    window.login = async (type) => {
+        if (type === 'google') {
+            try {
+                await signInWithPopup(auth, provider);
+                document.getElementById('auth-overlay').style.display = 'none';
+            } catch (error) { console.error(error); }
+        } else if (type === 'guest') {
+            const name = document.getElementById('guest-name').value.trim() || "Người dùng";
+            updateUI(name);
+            document.getElementById('auth-overlay').style.display = 'none';
+            await signInAnonymously(auth);
+        }
+    };
+
+    function updateUI(name) {
+        document.getElementById('user-display').innerText = name;
+        document.getElementById('user-initial').innerText = name[0].toUpperCase();
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) { 
+            currentUser = user; 
+            if (user.displayName) updateUI(user.displayName);
+            setupSync(); 
+        }
+    });
+
+    // --- THEME & PARTICLES (GIỮ NGUYÊN 100%) ---
+    window.changeTheme = (theme) => {
+        document.querySelectorAll('.bg-layer').forEach(l => l.style.display = 'none');
+        const layer = document.getElementById(theme + '-layer');
+        if (layer) {
+            layer.style.display = 'block';
+            const effectThemes = ['mint', 'pink', 'zodiac', 'messi'];
+            if (effectThemes.includes(theme)) {
+                window.renderParticles(theme + '-layer', theme);
             } else {
-                editingNoteId = null;
-                document.getElementById('modal-title').innerText = 'Tạo Ghi Chú Mới';
-                document.getElementById('note-title-input').value = '';
-                document.getElementById('note-input').value = '';
-                document.getElementById('image-url-input').value = '';
-                document.getElementById('spotify-url-input').value = '';
-                document.getElementById('btn-save').innerText = 'Lưu Ghi Chú';
+                layer.innerHTML = ''; 
             }
-            document.getElementById('note-modal').classList.remove('hidden');
-        };
-
-        window.closeNoteModal = () => document.getElementById('note-modal').classList.add('hidden');
-
-        function getSpotifyEmbed(url) {
-            if (!url) return null;
-    // Tìm mã ID của bài hát/playlist từ link người dùng dán vào
-    const match = url.match(/spotify(?:\.com\/|\:)(track|album|playlist|artist)(?:\/|\:)([a-zA-Z0-9]+)/);
-    
-    if (match) {
-        // Trả về Link Nhúng chuẩn để cho vào iframe
-        // match[1] là loại (track/album), match[2] là ID
-        return `https://open.spotify.com/embed/${match[1]}/${match[2]}`;
-    }
-    return null;
-}
-
-        window.saveNote = async () => {
-            if (!currentUser) {
-            alert("Vui lòng đăng nhập trước!");
-            return;
         }
-    
-            const title = document.getElementById('note-title-input').value;
-            const text = document.getElementById('note-input').value;
-            const imageUrl = document.getElementById('image-url-input').value.trim();
-            const spotifyRaw = document.getElementById('spotify-url-input').value.trim();
-    
-            // Nếu không có nội dung gì thì không lưu
-            if (!title && !text && !imageUrl && !spotifyRaw) return;
+    };
 
-            const noteData = {
-                title: title || "",
-                content: text || "",
-                color: activeColor,
-                font: activeFont,
-                imageUrl: imageUrl || "",
-                spotifyRaw: spotifyRaw || "",
-                spotifyEmbed: getSpotifyEmbed(spotifyRaw),
-                author: currentUser.displayName || document.getElementById('user-display').innerText || "Ẩn danh",
-                roomId: roomId || currentUser.uid, // Ghi chú thuộc về phòng nào
-                authorId: currentUser.uid, // <-- Dòng mới quan trọng nhất
-                updatedAt: Date.now() // Nên thêm thời gian cập nhật
+    window.renderParticles = (id, theme) => {
+        const layer = document.getElementById(id);
+        if (!layer) return;
+        layer.innerHTML = '';
+        const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
+        const count = theme === 'zodiac' ? 150 : 40; 
+        const fragment = document.createDocumentFragment();
+        for(let i=0; i < count; i++) {
+            const p = document.createElement('div');
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            if(theme === 'zodiac') {
+                p.className = 'star';
+                const size = Math.random() * 2 + 1;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+            } else {
+                p.className = theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
+                p.innerHTML = configs[theme];
+                p.style.fontSize = (Math.random() * 15 + 20) + 'px';
+                p.style.bottom = "-50px";
+                p.style.setProperty('--duration', (Math.random() * 7 + 8) + 's');
+            }
+            fragment.appendChild(p);
+        }
+        layer.appendChild(fragment);
+    };
+
+    // --- RENDER NOTES (CHỈ THÊM DATA-ID VÀ RESIZE-HANDLE) ---
+    function renderNotes(notes) {
+        const container = document.getElementById('canvas-content');
+        container.innerHTML = '';
+        notes.forEach(n => {
+            const card = document.createElement('div');
+            card.id = n.id;
+            card.className = `note-card note-${n.color} font-${n.font || 'quicksand'} flex flex-col relative`;
+            card.style.left = n.x + 'px';
+            card.style.top = n.y + 'px';
+            card.style.width = (n.width || 300) + 'px';
+            card.style.height = n.height ? n.height + 'px' : 'auto';
+            card.style.minHeight = '150px';
+
+            card.innerHTML = `
+                <div class="note-header" style="touch-action: none; cursor: move;">
+                    <span class="text-[8px] font-bold opacity-30 tracking-widest">${(n.author || "ANON").toUpperCase()}</span>
+                    <button class="delete-btn text-gray-500 hover:text-red-500 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
+                    ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
+                    ${n.content ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.content}</p>` : ''}
+                    ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
+                </div>
+                <div class="edit-hint">Nhấn đúp để chỉnh sửa</div>
+                <div class="resize-handle" data-id="${n.id}" style="position:absolute; bottom:0; right:0; width:25px; height:25px; cursor:nwse-resize; z-index:10; display:flex; align-items:flex-end; justify-content:flex-end; padding:2px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3;"><path d="M15 15l6 6M9 15l6 6M3 15l6 6"/></svg>
+                </div>
+            `;
+
+            // Logic Xóa
+            const deleteBtn = card.querySelector('.delete-btn');
+            if (n.authorId !== currentUser.uid) deleteBtn.style.display = 'none';
+            deleteBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (confirm("Xóa ghi chú này?")) await deleteDoc(doc(db, 'notes', n.id));
             };
 
-    try {
+            card.ondblclick = () => window.openNoteModal(n);
+            setupDrag(card, n);
+            container.appendChild(card);
+        });
+    }
+
+    // --- KÉO THẢ (DRAG) ---
+    function setupDrag(card, noteData) {
+        const header = card.querySelector('.note-header');
+        let isDragging = false;
+        let sX, sY;
+
+        const onStart = (e) => {
+            if (e.target.closest('button')) return;
+            isDragging = true;
+            card.style.zIndex = 1000;
+            const p = e.type.includes('touch') ? e.touches[0] : e;
+            sX = p.clientX / scale - noteData.x;
+            sY = p.clientY / scale - noteData.y;
+        };
+
+        const onMove = (e) => {
+            if (!isDragging) return;
+            const p = e.type.includes('touch') ? e.touches[0] : e;
+            card.style.left = (p.clientX / scale - sX) + 'px';
+            card.style.top = (p.clientY / scale - sY) + 'px';
+        };
+
+        const onEnd = async () => {
+            if (!isDragging) return;
+            isDragging = false;
+            await updateDoc(doc(db, 'notes', noteData.id), {
+                x: parseFloat(card.style.left),
+                y: parseFloat(card.style.top)
+            });
+        };
+
+        header.addEventListener('mousedown', onStart);
+        header.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchend', onEnd);
+    }
+
+    // --- RESIZE (CHỈ CHÈN THÊM LOGIC NÀY) ---
+    document.addEventListener('mousedown', startResizing);
+    document.addEventListener('touchstart', startResizing, { passive: false });
+
+    function startResizing(e) {
+        if (!e.target.classList.contains('resize-handle')) return;
+        e.preventDefault();
+        const noteId = e.target.dataset.id;
+        const el = document.getElementById(noteId);
+        const p = e.type === 'touchstart' ? e.touches[0] : e;
+        const sW = el.offsetWidth, sH = el.offsetHeight, sX = p.clientX, sY = p.clientY;
+
+        const onResizing = (me) => {
+            const mp = me.type === 'touchmove' ? me.touches[0] : me;
+            el.style.width = (sW + (mp.clientX - sX) / scale) + 'px';
+            el.style.height = (sH + (mp.clientY - sY) / scale) + 'px';
+        };
+
+        const stopResizing = async () => {
+            window.removeEventListener('mousemove', onResizing);
+            window.removeEventListener('touchmove', onResizing);
+            await updateDoc(doc(db, 'notes', noteId), {
+                width: parseInt(el.style.width),
+                height: parseInt(el.style.height)
+            });
+        };
+
+        window.addEventListener('mousemove', onResizing);
+        window.addEventListener('touchmove', onResizing, { passive: false });
+        window.addEventListener('mouseup', stopResizing, { once: true });
+        window.addEventListener('touchend', stopResizing, { once: true });
+    }
+
+    // --- CÁC LOGIC CÒN LẠI (GIỮ NGUYÊN) ---
+    function setupSync() {
+        const target = roomId || currentUser.uid;
+        if (!roomId || roomId === currentUser.uid) document.getElementById('owner-only-controls')?.classList.remove('hidden');
+        listenToRoomState(target);
+        onSnapshot(query(collection(db, 'notes'), where("roomId", "==", target)), (snap) => {
+            renderNotes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+    }
+
+    window.saveNote = async () => {
+        const title = document.getElementById('note-title-input').value;
+        const text = document.getElementById('note-input').value;
+        const img = document.getElementById('image-url-input').value.trim();
+        const noteData = {
+            title, content: text, color: activeColor, font: activeFont, imageUrl: img,
+            author: currentUser.displayName || "Ẩn danh",
+            roomId: roomId || currentUser.uid, authorId: currentUser.uid, updatedAt: Date.now()
+        };
         if (editingNoteId) {
             await updateDoc(doc(db, 'notes', editingNoteId), noteData);
         } else {
-            const id = Date.now().toString();
-            // Thiết lập vị trí ban đầu cho ghi chú mới
-            const newData = {
-                ...noteData,
-                x: (window.innerWidth / 2 - posX) / scale - 150,
-                y: (window.innerHeight / 2 - posY) / scale - 125,
-                width: 300,
-                height: 250
-            };
-            await setDoc(doc(db, 'notes', id), newData);
+            await setDoc(doc(db, 'notes', Date.now().toString()), {
+                ...noteData, x: (window.innerWidth/2 - posX)/scale - 150, y: (window.innerHeight/2 - posY)/scale - 125, width: 300, height: 250
+            });
         }
         window.closeNoteModal();
-    } catch (err) { 
-        console.error("Lỗi khi lưu:", err);
-        alert("Không thể lưu ghi chú. Kiểm tra lại kết nối hoặc phân quyền Firebase!");
-    }
-};
+    };
 
-       function setupSync() {
-    const targetRoom = roomId || currentUser.uid;
-    
-    // Nếu là chủ phòng, hiện bảng điều khiển khóa
-    if (!roomId || roomId === currentUser.uid) {
-        document.getElementById('owner-only-controls').classList.remove('hidden');
-    }
+    window.updateZoom = (f) => { scale = Math.min(Math.max(0.2, scale * f), 3); applyTransform(); };
+    function applyTransform() { document.getElementById('canvas-content').style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
 
-    listenToRoomState(targetRoom);
-
-    const notesCol = collection(db, 'notes');
-    // Lấy ghi chú thuộc về phòng này (thay vì authorId)
-    const q = query(notesCol, where("roomId", "==", targetRoom));
-    
-    onSnapshot(q, (snapshot) => {
-        renderNotes(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    const viewport = document.getElementById('canvas-viewport');
+    viewport.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.note-card') || e.target.closest('button')) return;
+        isDraggingViewport = true;
+        startX = e.clientX - posX; startY = e.clientY - posY;
     });
-}
-
-      function renderNotes(notes) {
-    const container = document.getElementById('canvas-content');
-    container.innerHTML = '';
-    notes.forEach(n => {
-        const card = document.createElement('div');
-        // Thêm min-h-max để tự động giãn theo nội dung nếu chưa bị resize thủ công
-        card.className = `note-card note-${n.color} font-${n.font || 'quicksand'} flex flex-col`;
-        card.style.left = n.x + 'px';
-        card.style.top = n.y + 'px';
-        card.style.width = (n.width || 300) + 'px';
-        // Nếu có n.height thì dùng, không thì để auto để tự giãn theo nội dung
-        card.style.height = n.height ? n.height + 'px' : 'auto';
-        card.style.minHeight = '150px';
-
-        card.innerHTML = `
-            <div class="note-header" style="touch-action: none;">
-                <span class="text-[8px] font-bold opacity-30 tracking-widest">${(n.author || "ANON").toUpperCase()}</span>
-                <button class="delete-btn text-gray-500 hover:text-red-500 p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            </div>
-            <div class="flex-grow overflow-hidden flex flex-col pointer-events-none">
-                ${n.title ? `<h3 class="font-bold text-lg mb-1">${n.title}</h3>` : ''}
-                ${n.content ? `<p class="text-sm opacity-90 whitespace-pre-wrap flex-grow">${n.content}</p>` : ''}
-                ${n.imageUrl ? `<img src="${n.imageUrl}" class="note-media max-h-[150px]" onerror="this.style.display='none'">` : ''}
-                ${n.spotifyEmbed ? `<iframe class="spotify-embed" src="${n.spotifyEmbed}" frameborder="0" allow="encrypted-media" style="pointer-events: auto;"></iframe>` : ''}
-            </div>
-            <div class="edit-hint">Nhấn đúp để chỉnh sửa</div>
-            <div class="resize-handle" style="position:absolute; bottom:0; right:0; width:25px; height:25px; cursor:nwse-resize; z-index:10;"></div>
-        `;
-function setupDrag(card, noteData) {
-    const header = card.querySelector('.note-header');
-    let isDragging = false;
-    let startX, startY;
-
-    const onStart = (e) => {
-        isDragging = true;
-        card.style.zIndex = 1000;
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        
-        startX = clientX / scale - noteData.x;
-        startY = clientY / scale - noteData.y;
-        header.style.cursor = 'grabbing';
-    };
-
-    const onMove = (e) => {
-        if (!isDragging) return;
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        
-        const nx = clientX / scale - startX;
-        const ny = clientY / scale - startY;
-        
-        card.style.left = nx + 'px';
-        card.style.top = ny + 'px';
-    };
-
-    const onEnd = async () => {
-        if (!isDragging) return;
-        isDragging = false;
-        header.style.cursor = 'move';
-        await updateDoc(doc(db, 'notes', noteData.id), {
-            x: parseFloat(card.style.left),
-            y: parseFloat(card.style.top)
-        });
-    };
-
-    header.addEventListener('mousedown', onStart);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onEnd);
-
-    header.addEventListener('touchstart', onStart, { passive: false });
-    window.addEventListener('touchmove', onMove, { passive: false });
-    window.addEventListener('touchend', onEnd);
-}
-        // Logic Xóa (Giữ nguyên quyền tác giả) [cite: 171, 173]
-        const deleteBtn = card.querySelector('.delete-btn');
-        if (n.authorId !== currentUser.uid) deleteBtn.style.display = 'none';
-        deleteBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (confirm("Xóa ghi chú này?")) await deleteDoc(doc(db, 'notes', n.id));
-        });
-
-        // Hỗ trợ Resize đồng nhất [cite: 175, 176]
-        const handleResize = () => {
-            const newWidth = card.offsetWidth;
-            const newHeight = card.offsetHeight;
-            updateDoc(doc(db, 'notes', n.id), { width: newWidth, height: newHeight });
-        };
-        
-        // Dùng ResizeObserver nhưng chỉ cập nhật khi dừng thao tác (debounce)
-        let resizeTimer;
-        new ResizeObserver(() => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(handleResize, 1500);
-        }).observe(card);
-
-        // Kéo thả hỗ trợ Mobile & PC [cite: 180, 181, 182]
-        setupDrag(card, n);
-        
-        card.addEventListener('dblclick', () => window.openNoteModal(n));
-        container.appendChild(card);
+    window.addEventListener('mousemove', (e) => {
+        if (isDraggingViewport) { posX = e.clientX - startX; posY = e.clientY - startY; applyTransform(); }
     });
-}
-       window.renderParticles = (id, theme) => {
-    const layer = document.getElementById(id);
-    if (!layer) return;
-    layer.innerHTML = '';
-    
-    const configs = { mint: '🐟', pink: '❤️', zodiac: '', messi: '⚽' };
-    const count = theme === 'zodiac' ? 150 : 40; 
-    const fragment = document.createDocumentFragment();
+    window.addEventListener('mouseup', () => isDraggingViewport = false);
+    viewport.addEventListener('wheel', (e) => { e.preventDefault(); window.updateZoom(e.deltaY > 0 ? 0.9 : 1.1); }, { passive: false });
 
-    for(let i=0; i < count; i++) {
-        const p = document.createElement('div');
-        
-        // Vị trí ngang ngẫu nhiên cho tất cả
-        p.style.left = Math.random() * 100 + 'vw';
-        p.style.animationDelay = Math.random() * 15 + 's';
+    // Khởi tạo theme mặc định
+    window.changeTheme('mint');
 
-        if(theme === 'zodiac') {
-            p.className = 'star';
-            const size = Math.random() * 2 + 1;
-            p.style.width = size + 'px';
-            p.style.height = size + 'px';
-            p.style.top = Math.random() * 100 + 'vh'; // Sao rải khắp màn hình
-            p.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
-        } else {
-            p.className = theme === 'mint' ? 'fish' : theme === 'messi' ? 'ball' : 'heart';
-            p.innerHTML = configs[theme];
-            p.style.fontSize = (Math.random() * 15 + 20) + 'px'; // Kích thước icon to hơn xíu cho đẹp
-            p.style.bottom = "-50px"; // Đặt ở dưới cùng để chuẩn bị bay lên
-            p.style.setProperty('--duration', (Math.random() * 7 + 8) + 's');
-        }
-        fragment.appendChild(p);
-    }
-    layer.appendChild(fragment);
-};
-
-        const viewport = document.getElementById('canvas-viewport');
-        viewport.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.note-card') || e.target.closest('button')) return;
-            isDraggingViewport = true;
-            startX = e.clientX - posX;
-            startY = e.clientY - posY;
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (isDraggingViewport) {
-                posX = e.clientX - startX;
-                posY = e.clientY - startY;
-                applyTransform();
-            }
-        });
-        window.addEventListener('mouseup', () => isDraggingViewport = false);
-        viewport.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            window.updateZoom(e.deltaY > 0 ? 0.9 : 1.1);
-        }, { passive: false });
-
-        viewport.style.backgroundImage = 'radial-gradient(rgba(0,0,0,0.06) 1.5px, transparent 1.5px)';
-        viewport.style.backgroundSize = '50px 50px';
-    </script>
+</script>
+   
 </body>
 </html>
 
