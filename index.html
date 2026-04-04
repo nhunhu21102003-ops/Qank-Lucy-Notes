@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qank&Lucy Notes - Collaborative</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://w.soundcloud.com/player/api.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Dancing+Script:wght@400;700&family=Playfair+Display:ital,wght@0,400;1,700&family=Space+Mono&family=Montserrat:wght@400;800&family=Pacifico&family=Bitter:wght@400;700&family=Lora:ital,wght@0,400;1,700&family=Oswald:wght@300;600&family=Roboto+Slab:wght@300;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -210,6 +211,22 @@
 /* Chặn cuộn trang khi đang tương tác với canvas */
 #canvas-viewport { touch-action: none; }
         }
+        /* Music Bar Style */
+.mt-4.w-64 {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.mt-4.w-64:hover {
+    transform: translateY(-3px) scale(1.05);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-color: #f9a8d4;
+}
+
+/* Ẩn bớt các thành phần thừa của SoundCloud */
+#sc-widget {
+    filter: grayscale(0.2) contrast(1.1);
+}
     </style>
 </head>
 <body>
@@ -227,6 +244,19 @@
         <button id="btn-unlock" onclick="toggleRoomLock(false)" class="p-2 rounded-full hover:bg-emerald-50 text-emerald-500 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
         </button>
+    </div>
+   <div class="mt-4 w-64 bg-white/60 backdrop-blur-md p-2 rounded-full shadow-lg border border-pink-100 flex items-center overflow-hidden" style="height: 50px;">
+    <div class="relative w-full h-full overflow-hidden rounded-full">
+        <iframe 
+            id="sc-widget"
+            src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1774026366&color=%23f9a8d4&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false" 
+            width="100%" 
+            height="166" 
+            scrolling="no" 
+            frameborder="no" 
+            allow="autoplay"
+            style="position: absolute; top: -75px; left: 0;">
+        </iframe>
     </div>
 </div>
     <div id="mint-layer" class="bg-layer"></div>
@@ -844,7 +874,14 @@ function applyTransform() {
 
     // Khởi tạo theme mặc định
     window.changeTheme('mint');
-
+// Thêm vào cuối phần Script của bạn
+const widgetElement = document.getElementById('sc-widget');
+if (widgetElement) {
+    const widget = SC.Widget(widgetElement);
+    widget.bind(SC.Widget.Events.FINISH, function() {
+        widget.play();
+    });
+}
 </script>
    
 </body>
