@@ -544,52 +544,69 @@ window.toggleSidebar = () => {
         document.getElementById('user-display').innerText = name;
         document.getElementById('user-initial').innerText = name[0].toUpperCase();
     }
-window.renameUser = () => {
-    const nameInput = document.getElementById('rename-input');
-    const newName = nameInput.value.trim();
+import { updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    if (!newName) {
-        alert("Nhập tên mới đã nè iu ơi! ❤️");
-        return;
+window.renameUser = async () => {
+    const input = document.getElementById('rename-input');
+    const newName = input.value.trim();
+    
+    if (newName) {
+        try {
+            // 1. Lưu vào bộ nhớ máy (để load trang không bị mất)
+            localStorage.setItem('qank_lucy_username', newName);
+            
+            // 2. Cập nhật vào Firebase Profile (để khi viết Note nó hiện tên mới)
+            if (auth.currentUser) {
+                await updateProfile(auth.currentUser, {
+                    displayName: newName
+                });
+            }
+
+            // 3. Cập nhật giao diện ngay lập tức
+            updateUI(newName);
+            
+            input.value = '';
+            alert("Đã đổi tên và cập nhật vào hệ thống! ❤️");
+        } catch (error) {
+            console.error("Lỗi đổi tên:", error);
+            alert("Không cập nhật được tên, thử lại nhé!");
+        }
     }
-
-    // 1. Cập nhật giao diện ngay lập tức
-    updateUI(newName);
-
-    // 2. Lưu vào localStorage để lần sau vào lại vẫn còn tên này
-    localStorage.setItem('custom_user_name', newName);
-
-    // 3. Xóa nội dung ô input sau khi lưu
-    nameInput.value = "";
-    alert("Đã đổi tên thành công rùi nhé!");
 };
      
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => { // Thêm chữ 'async' ở đây
     if (user) { 
         currentUser = user; 
         
-        // --- 1. KIỂM TRA TÊN ĐÃ ĐỔI TRONG MÁY ---
+        // 1. Lấy tên đã đổi từ bộ nhớ máy (localStorage)
         const savedName = localStorage.getItem('qank_lucy_username');
         
         if (savedName) {
-            // Nếu đã từng đổi tên, dùng tên đó
+            // Cập nhật giao diện ngay lập tức bằng tên đã đổi
             updateUI(savedName);
+            
+            // QUAN TRỌNG: Nếu tên trong Firebase khác với tên đã đổi, hãy cập nhật lại cho Firebase
+            if (user.displayName !== savedName) {
+                const { updateProfile } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                await updateProfile(user, { displayName: savedName });
+                console.log("Đã đồng bộ tên mới vào hệ thống Firebase!");
+            }
         } else if (user.displayName) {
-            // Nếu chưa đổi, dùng tên của Google/Facebook
+            // Nếu chưa từng đổi tên, dùng tên mặc định của Google
             updateUI(user.displayName);
         }
         
-        // --- 2. ẨN MÀN HÌNH ĐĂNG NHẬP ---
+        // 2. Ẩn màn hình đăng nhập
         const overlay = document.getElementById('auth-overlay');
         if (overlay) overlay.style.display = 'none';
         
         // Hiện nút menu 3 gạch
         document.getElementById('toggle-sidebar')?.classList.remove('hidden');
         
-        // Gọi hàm đồng bộ dữ liệu
+        // Gọi hàm đồng bộ dữ liệu ghi chú
         if (typeof setupSync === "function") setupSync(); 
     } else {
-        // Nếu chưa đăng nhập thì hiện màn hình chào
+        // Nếu thoát ra, hiện lại màn hình chào
         const overlay = document.getElementById('auth-overlay');
         if (overlay) overlay.style.display = 'flex';
     }
@@ -779,11 +796,19 @@ onAuthStateChanged(auth, (user) => {
         const title = document.getElementById('note-title-input').value;
         const text = document.getElementById('note-input').value;
         const img = document.getElementById('image-url-input').value.trim();
-        const noteData = {
-            title, content: text, color: activeColor, font: activeFont, imageUrl: img,
-            author: currentUser.displayName || "Ẩn danh",
-            roomId: roomId || currentUser.uid, authorId: currentUser.uid, updatedAt: Date.now()
-        };
+       const noteData = {
+    title, 
+    content: text, 
+    color: activeColor, 
+    font: activeFont, 
+    imageUrl: img,
+    // --- SỬA DÒNG NÀY ---
+    author: localStorage.getItem('qank_lucy_username') || currentUser.displayName || "Ẩn danh",
+    // --------------------
+    roomId: roomId || currentUser.uid, 
+    authorId: currentUser.uid, 
+    updatedAt: Date.now()
+};
         if (editingNoteId) {
             await updateDoc(doc(db, 'notes', editingNoteId), noteData);
         } else {
