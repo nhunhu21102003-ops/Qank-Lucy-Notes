@@ -236,8 +236,6 @@
         Chia sẻ phòng
     </button>
     
-    <div class="fixed top-6 right-6 z-10 flex flex-col items-end">
-
     <div id="owner-only-controls" class="hidden flex items-center bg-white/90 backdrop-blur p-2 rounded-full shadow-md border border-gray-100">
         <span class="text-[10px] font-bold text-gray-400 px-2 uppercase">Quyền bạn bè:</span>
         <button id="btn-lock" onclick="toggleRoomLock(true)" class="p-2 rounded-full hover:bg-red-50 text-gray-400 transition-colors">
@@ -247,34 +245,23 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
         </button>
     </div>
-
-    <div class="w-64 ml-auto mt-4 mb-2"> 
-        <div class="bg-white/50 backdrop-blur-sm p-3 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-all duration-300">
-            <p class="text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] mb-2 text-center"> 
-                Our melody 💌
-            </p>
-            <div class="rounded-full overflow-hidden h-[20px] flex items-center">
-                <iframe id="sc-widget" 
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1356686647&color=%23f9a8d4&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false" 
-                        width="100%" 
-                        height="20" 
-                        scrolling="no" 
-                        frameborder="no" 
-                        allow="autoplay"
-                        class="opacity-90">
-                </iframe>
-            </div>
+  <div class="w-64 ml-auto mt-4 mb-2"> <div class="bg-white/50 backdrop-blur-sm p-3 rounded-3xl border-2 border-white shadow-sm hover:shadow-md transition-all duration-300">
+        <p class="text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] mb-2 text-center"> 
+            AS LONG AS YOU LOVE ME 🎵
+        </p>
+        <div class="rounded-full overflow-hidden h-[20px] flex items-center">
+            <iframe id="sc-widget" 
+                    src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1356686647&color=%23f9a8d4&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false" 
+                    width="100%" 
+                    height="20" 
+                    scrolling="no" 
+                    frameborder="no" 
+                    allow="autoplay"
+                    class="opacity-90">
+            </iframe>
         </div>
     </div>
-
-</div> ```
-
-### Tại sao làm vậy lại hết bị che?
-* **`fixed top-6 right-6`**: Giúp cả cụm này luôn đứng yên ở góc phải màn hình.
-* **`z-10`**: Đây là "chìa khóa". Vì các Note của Như Huỳnh thường có `z-index` tự động tăng lên khi di chuyển, việc để nhạc ở mức `10` (thay vì `100` hay mặc định quá cao) sẽ giúp các tấm Note lướt lên trên thanh nhạc dễ dàng hơn.
-* **`flex flex-col items-end`**: Giúp nút Quyền bạn bè và Thanh nhạc tự động xếp hàng dọc, canh đều về phía bên phải.
-
-Như Huỳnh dán cái "lồng" này vào là đảm bảo vừa đẹp, vừa không lo Note bị chui xuống dưới nhạc nữa đâu! ❤️
+</div>
     <div id="mint-layer" class="bg-layer"></div>
     <div id="pink-layer" class="bg-layer" style="background-color: #ffb6c1;"></div>
     <div id="zodiac-layer" class="bg-layer" style="background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);"></div>
