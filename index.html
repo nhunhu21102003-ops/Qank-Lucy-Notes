@@ -266,15 +266,8 @@
             </div>
         </div>
     </div>
+</div>
 
-</div> ```
-
-### Tại sao làm vậy lại hết bị che?
-* **`fixed top-6 right-6`**: Giúp cả cụm này luôn đứng yên ở góc phải màn hình.
-* **`z-10`**: Đây là "chìa khóa". Vì các Note của Như Huỳnh thường có `z-index` tự động tăng lên khi di chuyển, việc để nhạc ở mức `10` (thay vì `100` hay mặc định quá cao) sẽ giúp các tấm Note lướt lên trên thanh nhạc dễ dàng hơn.
-* **`flex flex-col items-end`**: Giúp nút Quyền bạn bè và Thanh nhạc tự động xếp hàng dọc, canh đều về phía bên phải.
-
-Như Huỳnh dán cái "lồng" này vào là đảm bảo vừa đẹp, vừa không lo Note bị chui xuống dưới nhạc nữa đâu! ❤️
     <div id="mint-layer" class="bg-layer"></div>
     <div id="pink-layer" class="bg-layer" style="background-color: #ffb6c1;"></div>
     <div id="zodiac-layer" class="bg-layer" style="background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);"></div>
