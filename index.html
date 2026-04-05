@@ -88,8 +88,10 @@
             user-select: none;
         }
     .resize-handle {
-    touch-action: none; /* Khóa cuộn trang khi đang nắm nút chỉnh size */
-     z-index: 10;
+    width: 20px !important;
+    height: 20px !important;
+    background: rgba(0,0,0,0.1); /* Cho người dùng thấy vùng để đặt ngón tay */
+    border-radius: 50%;
 }
             /* Tạo nút kéo tùy chỉnh */
 .resize-handle {
@@ -443,6 +445,7 @@
     let isLocked = false;
     let currentUser = null;
     let scale = 1, posX = 0, posY = 0;
+     let isInteractingWithNote = false;
     let initialDist = null; // Khoảng cách ban đầu giữa 2 ngón tay
     let initialScale = 1;   // Tỉ lệ scale tại thời điểm bắt đầu chạm
     let touchStartX, touchStartY;
@@ -746,7 +749,20 @@ onAuthStateChanged(auth, async (user) => { // Thêm chữ 'async' ở đây
                 e.stopPropagation();
                 if (confirm("Xóa ghi chú này?")) await deleteDoc(doc(db, 'notes', n.id));
             };
+            // --- DÁN ĐOẠN NÀY VÀO ĐÂY ---
+            // Khi chạm vào card, báo hiệu cho hệ thống là đang tương tác với Note
+            card.addEventListener('touchstart', () => {
+                isInteractingWithNote = true;
+            }, { passive: true });
 
+            card.addEventListener('touchend', () => {
+                isInteractingWithNote = false;
+            }, { passive: true });
+
+            card.addEventListener('touchcancel', () => {
+                isInteractingWithNote = false;
+            }, { passive: true });
+            // ----------------------------
             card.ondblclick = () => window.openNoteModal(n);
             setupDrag(card, n);
             container.appendChild(card);
@@ -916,24 +932,17 @@ viewport.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 viewport.addEventListener('touchmove', (e) => {
-    // Chặn kéo nền nếu đang thao tác trên thẻ/nút
-    if (e.target.closest('.note-card') || e.target.closest('.resize-handle') || e.target.closest('button')) {
-        return;
-    }
-
-    if (e.touches.length === 1) {
-        e.preventDefault();
+    // CHỈ xử lý kéo Canvas nếu:
+    // 1. Dùng 1 ngón tay
+    // 2. KHÔNG phải đang chạm vào Note hoặc nút Resize
+    if (e.touches.length === 1 && !isInteractingWithNote) {
+        e.preventDefault(); // Chặn cuộn trang web mặc định
         const touch = e.touches[0];
+        
+        // Cập nhật vị trí mới cho posX và posY
         posX = touch.clientX - touchStartX;
         posY = touch.clientY - touchStartY;
-        applyTransform();
-    } else if (e.touches.length === 2 && initialDist !== null) {
-        e.preventDefault();
-        const currentDist = getDistance(e.touches);
-        const zoomFactor = currentDist / initialDist;
-        scale = Math.min(Math.max(0.2, initialScale * zoomFactor), 3);
-        const zoomText = document.getElementById('zoom-level-text');
-        if (zoomText) zoomText.innerText = Math.round(scale * 100) + "%";
+        
         applyTransform();
     }
 }, { passive: false });
