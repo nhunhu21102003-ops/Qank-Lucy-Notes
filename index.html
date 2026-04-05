@@ -901,19 +901,19 @@ viewport.addEventListener('touchstart', (e) => {
 // Xử lý khi di chuyển ngón tay
 viewport.addEventListener('touchmove', (e) => {
     if (e.touches.length === 2 && initialDist !== null) {
-        e.preventDefault(); // Ngăn trình duyệt cuộn trang mặc định [cite: 74]
+        e.preventDefault(); // Ngăn trình duyệt cuộn trang mặc định 
         
         const currentDist = getDistance(e.touches);
         const zoomFactor = currentDist / initialDist;
         
         // Cập nhật scale dựa trên tỉ lệ thay đổi khoảng cách
-        scale = Math.min(Math.max(0.2, initialScale * zoomFactor), 3); [cite: 225]
+        scale = Math.min(Math.max(0.2, initialScale * zoomFactor), 3); 
         
         // Cập nhật hiển thị % trên UI
-        const zoomText = document.getElementById('zoom-level-text'); [cite: 225]
-        if (zoomText) zoomText.innerText = Math.round(scale * 100) + "%"; [cite: 225]
+        const zoomText = document.getElementById('zoom-level-text'); 
+        if (zoomText) zoomText.innerText = Math.round(scale * 100) + "%"; 
         
-        applyTransform(); [cite: 223, 225]
+        applyTransform(); 
     }
 }, { passive: false });
 
