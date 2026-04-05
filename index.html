@@ -87,7 +87,9 @@
             touch-action: none; /* Ngăn trình duyệt cuộn trang khi đang tương tác với note */
             user-select: none;
         }
-    
+    .resize-handle {
+    touch-action: none; /* Khóa cuộn trang khi đang nắm nút chỉnh size */
+}
             /* Tạo nút kéo tùy chỉnh */
 .resize-handle {
     position: absolute;
@@ -894,49 +896,50 @@ function getDistance(touches) {
 // --- ĐOẠN MÃ XỬ LÝ CẢM ỨNG TỐI ƯU CHO DI ĐỘNG ---
 
 // 1. Xử lý khi bắt đầu chạm
+// Cập nhật sự kiện TouchStart của Viewport
 viewport.addEventListener('touchstart', (e) => {
-    // KIỂM TRA: Nếu chạm trúng thẻ note hoặc nút bấm thì DỪNG việc kéo màn hình lại
-    if (e.target.closest('.note-card') || e.target.closest('button')) {
+    // 1. Nếu chạm vào nút Resize hoặc bất kỳ nút bấm nào: Dừng ngay việc kéo màn hình
+    if (e.target.closest('.resize-handle') || e.target.closest('button')) {
         return; 
     }
 
+    // 2. Nếu chạm vào Thẻ Note: Dừng việc kéo màn hình để nhường cho mã di chuyển thẻ
+    if (e.target.closest('.note-card')) {
+        return;
+    }
+
+    // 3. Chỉ khi chạm vào NỀN TRỐNG mới xử lý kéo màn hình hoặc Zoom
     if (e.touches.length === 1) {
-        // Chế độ 1 ngón: Kéo màn hình (Pan)
         const touch = e.touches[0];
         touchStartX = touch.clientX - posX;
         touchStartY = touch.clientY - posY;
     } else if (e.touches.length === 2) {
-        // Chế độ 2 ngón: Chuẩn bị Zoom
         initialDist = getDistance(e.touches);
         initialScale = scale;
         e.preventDefault(); 
     }
 }, { passive: false });
 
-// 2. Xử lý khi đang di chuyển ngón tay
+// Cập nhật sự kiện TouchMove của Viewport
 viewport.addEventListener('touchmove', (e) => {
-    // KIỂM TRA: Nếu đang cầm thẻ note thì không được dịch chuyển màn hình
-    if (e.target.closest('.note-card') || e.target.closest('button')) {
-        return; 
+    // Nếu đang chạm vào thẻ, nút resize, hoặc nút bấm: KHÔNG kéo màn hình
+    if (e.target.closest('.note-card') || e.target.closest('.resize-handle') || e.target.closest('button')) {
+        return;
     }
 
     if (e.touches.length === 1) {
-        // Logic kéo màn hình
         e.preventDefault();
         const touch = e.touches[0];
         posX = touch.clientX - touchStartX;
         posY = touch.clientY - touchStartY;
         applyTransform();
     } else if (e.touches.length === 2 && initialDist !== null) {
-        // Logic Zoom (2 ngón)
         e.preventDefault();
         const currentDist = getDistance(e.touches);
         const zoomFactor = currentDist / initialDist;
         scale = Math.min(Math.max(0.2, initialScale * zoomFactor), 3);
-        
         const zoomText = document.getElementById('zoom-level-text');
         if (zoomText) zoomText.innerText = Math.round(scale * 100) + "%";
-        
         applyTransform();
     }
 }, { passive: false });
